@@ -56,6 +56,8 @@ void draw_rectangle(int start_row, int start_col, int height, int width) {
 
 void draw_border() {
     free_map();
+    add_file(2, 1, '#');
+    mvaddch(2, 1, '#');
     for (int i = 2; i < 36; ++i) {
         add_file(i, 2, '#');
         mvaddch(i, 3 - 1, '#');
@@ -170,6 +172,8 @@ void new_game() {
 
         move(y, x);
 //        getch();
+//        mvaddch(10,3,'T');
+//        refresh();
     }
 
     // save_map_to_file(y,x);
@@ -443,7 +447,6 @@ void put_corridor(int start_row, int start_col) {
         flag = 1;
         add_file(start_row, start_col + 1, '#');
         mvaddch(start_row, start_col + 1, '#');
-        refresh();
         start_col++;
     }
     if (flag)
@@ -459,9 +462,13 @@ void put_corridor(int start_row, int start_col) {
     while ((mvinch(start_row, start_col - 1) & A_CHARTEXT) == ' ') {
         add_file(start_row, start_col - 1, '#');
         mvaddch(start_row, start_col - 1, '#');
-        refresh();
         start_col--;
+        if (start_col == 3) {
+            add_file(start_row, 2, '#');
+            mvaddch(start_row, 2, '#');
+        }
     }
+
 }
 
 
