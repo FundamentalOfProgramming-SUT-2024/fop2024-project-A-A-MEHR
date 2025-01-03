@@ -5,7 +5,7 @@
 #include <string.h>
 #include "wchar.h"
 #include "locale.h"
-#include "new_game.c"
+#include "init_game.c"
 
 #define MAX_AUDIO_SIZE 1048576 // Maximum audio size (1 MB for example)
 
@@ -27,8 +27,6 @@ Settings settings = {
 #define MAX_INPUT_LENGTH 100
 
 void load_audio(const char *file_path, Settings *settings);
-
-void previous_game();
 
 void scores_table_func(char *username, int start);
 
@@ -95,9 +93,6 @@ void second_menu(char *username) {
     refresh();
 }
 
-void previous_game() {
-
-}
 
 void scores_table_func(char *username, int start) {
     raw();

@@ -135,6 +135,55 @@ void new_game() {
     return;
 }
 
+void previous_game() {
+    int ch;
+    int x = 158, y = 5; // Cursor starting position
+    srand(time(NULL));
+    initscr();
+    noecho();
+    cbreak();
+    resize_term(37, 162);
+    keypad(stdscr, TRUE);
+    curs_set(1);
+    load_map_from_file();
+
+    draw_map_to_terminal();
+    move(y, x);
+
+    while ((ch = getch()) != 'q') { // Press 'q' to quit
+        switch (ch) {
+            case KEY_UP:
+                if (y > 0) y--;
+                break;
+            case KEY_DOWN:
+                if (y < MAP_ROWS - 1) y++;
+                break;
+            case KEY_LEFT:
+                if (x > 0) x--;
+                break;
+            case KEY_RIGHT:
+                if (x < MAP_COLS - 1) x++;
+                break;
+            case ' ':
+                map[y][x] = (map[y][x] == '.') ? '#' : '.';
+                break;
+        }
+
+        draw_map_to_terminal();
+        if (x < 3) x = 3;
+        if (y >= 34) y = 34;
+        if (y < 3) y = 3;
+        if (x >= 158) x = 158;
+        move(y, x);
+    }
+
+    save_map_to_file();
+
+    endwin();
+    return;
+}
+
+
 void get_parts(int *rands) {
     int count = 0;
     while (true) {
