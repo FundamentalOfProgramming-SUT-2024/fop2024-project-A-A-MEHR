@@ -203,7 +203,7 @@ void new_game() {
             attroff(COLOR_PAIR(3));
         }
         if (((mvinch(y, x) & A_CHARTEXT) == 'P')) {
-          //  second_floor(y,x);
+            second_floor(y,x);
         }
 
 
