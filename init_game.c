@@ -2,8 +2,9 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "move.c"
-
+#include "second_floor.c"
 
 int key_pair[9];
 int DELAY = 100000;
@@ -12,6 +13,8 @@ int x = 0, y = 0;
 void get_parts(int *rands);
 
 void draw_room();
+
+void *change_able_pass();
 
 int rands[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 
@@ -28,6 +31,8 @@ int get_part(int y, int x);
 int add_file(int row, int col, char character);
 
 void new_game();
+
+int reverse_number(int num);
 
 int generate_pass_key(int y, int x);
 
@@ -118,7 +123,8 @@ void new_game() {
 
     draw_map_to_terminal();
     move(y, x);
-
+    pthread_t thread_id;
+    pthread_create(&thread_id, NULL, change_able_pass, NULL);
     while ((ch = getch()) != 'q') { // Press 'q' to quit
         switch (ch) {
             case KEY_UP:
@@ -145,6 +151,38 @@ void new_game() {
                     x--;
                 }
                 break;
+            case 'p':
+                if (y > 0) y--;
+                if (x < MAP_COLS - 1) x++;
+                if (mvinch(y, x) == '*' || mvinch(y, x) == ' ' || mvinch(y, x) == 'o') {
+                    y++;
+                    x--;
+                }
+                break;
+            case 'w':
+                if (y > 0) y--;
+                if (x > 0) x--;
+                if (mvinch(y, x) == '*' || mvinch(y, x) == ' ' || mvinch(y, x) == 'o') {
+                    y++;
+                    x++;
+                }
+                break;
+            case 'm':
+                if (y < MAP_ROWS - 1) y++;
+                if (x < MAP_COLS - 1) x++;
+                if (mvinch(y, x) == '*' || mvinch(y, x) == ' ' || mvinch(y, x) == 'o') {
+                    y--;
+                    x--;
+                }
+                break;
+            case 'z':
+                if (x > 0) x--;
+                if (y < MAP_COLS - 1) y++;
+                if (mvinch(y, x) == '*' || mvinch(y, x) == ' ' || mvinch(y, x) == 'o') {
+                    y--;
+                    x++;
+                }
+                break;
             case ' ':
                 map[y][x] = (map[y][x] == '.') ? '#' : '.';
                 break;
@@ -166,7 +204,7 @@ void new_game() {
             attroff(COLOR_PAIR(3));
         }
         if (((mvinch(y, x) & A_CHARTEXT) == 'P')) {
-//            new_game();
+            second_floor();
         }
 
 
@@ -563,8 +601,8 @@ int check_key(int pos) {
         mvprintw(0, 2, "Enter key: ");
         int password;
         scanw("%d", &password);
-
-        if (key_pair[pos] != password) {
+        int r_key = reverse_number(key_pair[pos]);
+        if ((key_pair[pos] != password) && (r_key != password)) {
             if (i == 0) {
                 mvprintw(1, 2, "warning you entered first wrong password!        ");
             } else if (i == 1) {
@@ -588,4 +626,26 @@ int check_key(int pos) {
     }
 
     return 0;
+}
+
+int reverse_number(int num) {
+    int reversed = 0;
+
+    while (num != 0) {
+        int digit = num % 10;         // Extract the last digit
+        reversed = reversed * 10 + digit; // Add the digit to the reversed number
+        num /= 10;                    // Remove the last digit from the original number
+    }
+
+    return reversed;
+}
+
+void *change_able_pass() {
+    while (1) {
+        key_pair[2] = 1000 + rand() % 9000;
+        key_pair[5] = 1000 + rand() % 9000;
+        key_pair[8] = 1000 + rand() % 9000;
+        sleep(5);
+    }
+    return NULL;
 }

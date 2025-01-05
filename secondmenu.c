@@ -6,9 +6,8 @@
 #include "wchar.h"
 #include "locale.h"
 #include "init_game.c"
-
+void* play_music();
 #define MAX_AUDIO_SIZE 1048576 // Maximum audio size (1 MB for example)
-
 typedef struct {
     int hard_ness;
     int hero_color_pair;
@@ -170,15 +169,17 @@ void scores_table_func(char *username, int start) {
 void setings() {
     char hard_ness[10];
     char hero_color[10];
-    create_input_box(LINES / 2 - 1, COLS / 2 - 1, "hard_ness{1,2,3}", hard_ness);
-    create_input_box(LINES / 2 + 2, COLS / 2 - 1, "hero_color{1,2,3}", hero_color);
+
     load_audio("audio_file.wav", &settings);
     settings.hard_ness = atoi(hard_ness);
     settings.hero_color_pair = atoi(hero_color);
     if (settings.audio) {
         printw("Audio is loaded and ready to use.\n");
     }
-
+    pthread_t thread_id;
+    pthread_create(&thread_id, NULL,  play_music, NULL);
+    create_input_box(LINES / 2 - 1, COLS / 2 - 1, "hard_ness{1,2,3}", hard_ness);
+    create_input_box(LINES / 2 + 2, COLS / 2 - 1, "hero_color{1,2,3}", hero_color);
 }
 
 void my_profile(char *username) {
@@ -218,4 +219,49 @@ void load_audio(const char *file_path, Settings *settings) {
 
     fclose(file);
     printf("Audio loaded, size: %zu bytes\n", settings->audio_size);
+
+}
+
+#include <stdio.h>
+#include <SDL2/SDL.h>
+
+void* play_music() {
+    // Initialize SDL2
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        printf("SDL_Init Error: %s\n", SDL_GetError());
+        return NULL;
+    }
+
+    // Load the WAV file
+    SDL_AudioSpec wav_spec;
+    Uint8 *wav_buffer;
+    Uint32 wav_length;
+
+    if (SDL_LoadWAV("audio_file.wav", &wav_spec, &wav_buffer, &wav_length) == NULL) {
+        printf("SDL_LoadWAV Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return NULL;
+    }
+
+    // Open the audio device
+    if (SDL_OpenAudio(&wav_spec, NULL) < 0) {
+        printf("SDL_OpenAudio Error: %s\n", SDL_GetError());
+        SDL_FreeWAV(wav_buffer);
+        SDL_Quit();
+        return NULL;
+    }
+
+    // Play the WAV file
+    SDL_PauseAudio(0); // Start playing the audio
+    SDL_QueueAudio(1, wav_buffer, wav_length);  // Queue the WAV file into the audio buffer
+
+    // Wait for the audio to finish playing
+    SDL_Delay(30000); // Wait for 3 seconds (you can adjust this as needed)
+
+    // Clean up
+    SDL_FreeWAV(wav_buffer); // Free the loaded WAV data
+    SDL_CloseAudio();        // Close the audio device
+    SDL_Quit();              // Quit SDL
+
+    return NULL;
 }

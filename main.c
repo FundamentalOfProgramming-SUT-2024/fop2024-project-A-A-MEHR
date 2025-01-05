@@ -6,11 +6,11 @@
 #include <unistd.h>
 #include "secondmenu.c"
 
-//typedef struct {
-//    char username[100];
-//    char password[100];
-//    char email[100];
-//} user;
+typedef struct {
+    char username[100];
+    char password[100];
+    char email[100];
+} user_me;
 
 void create_input_box(int y, int x, const char *prompt, char *input);
 
