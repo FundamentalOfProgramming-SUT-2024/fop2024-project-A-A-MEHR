@@ -35,47 +35,47 @@ int key_pair_tf[9];
 int x_tf = 0, y_tf = 0;
 int show_health_bar_tf = 0;
 
-void get_parts_tf(int *rands);
+void get_parts_lf(int *rands);
 
-void draw_room_tf();
+void draw_room_lf();
 
-void *draw_health_bar_tf();
+void *draw_health_bar_lf();
 
-void *change_able_pass_tf();
+void *change_able_pass_lf();
 
-void update_visibility_tf(int player_y, int player_x);
+void update_visibility_lf(int player_y, int player_x);
 
 int rands_tf[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-void fill_room_tf(int start_row, int start_col, int height, int width, int tmp, int tmp2);
+void fill_room_lf(int start_row, int start_col, int height, int width, int tmp, int tmp2);
 
-void fill_room_out_window_tf(int start_row, int start_col, int height, int width);
+void fill_room_out_window_lf(int start_row, int start_col, int height, int width);
 
-void fill_room_out_door_tf(int start_row, int start_col, int height, int width);
+void fill_room_out_door_lf(int start_row, int start_col, int height, int width);
 
-void put_corridor_tf(int start_row, int start_col);
+void put_corridor_lf(int start_row, int start_col);
 
-int add_file_tf(int row, int col, char character);
+int add_file_lf(int row, int col, char character);
 
-void draw_rectangle_tf(int start_row, int start_col, int height, int width);
+void draw_rectangle_lf(int start_row, int start_col, int height, int width);
 
-int reverse_number_tf(int num);
+int reverse_number_lf(int num);
 
-int generate_pass_key_tf(int y, int x);
+int generate_pass_key_lf(int y, int x);
 
-int check_key_tf(int pos);
+int check_key_lf(int pos);
 
-void free_map_tf();
+void free_map_lf();
 
-int get_part_tf(int y, int x);
+int get_part_lf(int y, int x);
 
-void move_to_second_line_tf(FILE *file);
+void move_to_second_line_lf(FILE *file);
 
-void load_map_from_file_tf();
+void load_map_from_file_lf();
 
-void draw_map_to_terminal_tf();
+void draw_map_to_terminal_lf();
 
-void move_to_second_line_tf(FILE *file) {
+void move_to_second_line_lf(FILE *file) {
     char buffer[1024]; // Buffer to hold the first line
 
     // Read and discard the first line
@@ -84,8 +84,8 @@ void move_to_second_line_tf(FILE *file) {
     }
 }
 
-void load_map_from_file_tf() {
-    FILE *file = fopen("second_floor.txt", "r");
+void load_map_from_file_lf() {
+    FILE *file = fopen("third_floor.txt", "r");
     move_to_second_line_tf(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
@@ -120,14 +120,14 @@ void load_map_from_file_tf() {
 }
 
 
-void update_visibility_tf(int player_y, int player_x) {
+void update_visibility_lf(int player_y, int player_x) {
     if ((map_tf[player_y - 2][player_x].symbol == '?' && !map_tf[player_y - 2][player_x].visible) ||
         (map_tf[player_y - 2][player_x].symbol == '^' && !map_tf[player_y - 2][player_x].visible)) {
         map_tf[player_y - 2][player_x].visible = true; // Make the hidden 'p' visible
     }
 }
 
-void draw_map_to_terminal_tf() {
+void draw_map_to_terminal_lf() {
     clear();
     if (has_colors()) {
         start_color();
@@ -216,9 +216,9 @@ void draw_map_to_terminal_tf() {
 }
 
 
-void free_map_tf() {
+void free_map_lf() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("second_floor.txt", "w");
+    FILE *file = fopen("third_floor.txt", "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -231,7 +231,7 @@ void free_map_tf() {
 }
 
 
-void draw_rectangle_tf(int start_row, int start_col, int height, int width) {
+void draw_rectangle_lf(int start_row, int start_col, int height, int width) {
     height++;
     width++;
     rooms_tf[room_num_tf].y = start_row;
@@ -565,7 +565,7 @@ int third_floor() {
     return 0;
 }
 
-void previous_game_tf() {
+void previous_game_lf() {
     int ch;// Cursor starting position
     srand(time(NULL));
     initscr();
@@ -613,7 +613,7 @@ void previous_game_tf() {
 }
 
 
-void get_parts_tf(int *rands) {
+void get_parts_lf(int *rands) {
     int count = 0;
     while (true) {
         int rand_num = rand() % 9;
@@ -626,7 +626,7 @@ void get_parts_tf(int *rands) {
     }
 }
 
-void draw_room_tf() {
+void draw_room_lf() {
     int flag = 0;
     int flag2 = 0;
 
@@ -662,7 +662,7 @@ void draw_room_tf() {
     }
 }
 
-void fill_room_tf(int start_row, int start_col, int height, int width, int tmp, int tmp2) {
+void fill_room_lf(int start_row, int start_col, int height, int width, int tmp, int tmp2) {
     int o_num = rand() % 3;
     for (int i = start_col + 1; i <= start_col + width; ++i) {
         for (int j = start_row + 1; j <= start_row + height; ++j) {
@@ -813,7 +813,7 @@ void fill_room_tf(int start_row, int start_col, int height, int width, int tmp, 
     }
 }
 
-void fill_room_out_window_tf(int start_row, int start_col, int height, int width) {
+void fill_room_out_window_lf(int start_row, int start_col, int height, int width) {
     int index = rand() % (2 * (height + 1 + width + 1));
     if (index < width + 1) {
         add_file_tf(start_row, start_col + index, '=');
@@ -833,7 +833,7 @@ void fill_room_out_window_tf(int start_row, int start_col, int height, int width
     }
 }
 
-void fill_room_out_door_tf(int start_row, int start_col, int height, int width) {
+void fill_room_out_door_lf(int start_row, int start_col, int height, int width) {
     int repeat = rand() % 2 + 1;
     int index = rand() % (2 * (height + 1 + width + 1));
 
@@ -935,7 +935,7 @@ void fill_room_out_door_tf(int start_row, int start_col, int height, int width) 
     }
 }
 
-void put_corridor_tf(int start_row, int start_col) {
+void put_corridor_lf(int start_row, int start_col) {
     int flag = 0;
     while ((mvinch(start_row + 1, start_col) & A_CHARTEXT) == ' ') {
         flag = 1;
@@ -976,10 +976,10 @@ void put_corridor_tf(int start_row, int start_col) {
 
 #include <stdio.h>
 
-int add_file_tf(int row, int col, char character) {
+int add_file_lf(int row, int col, char character) {
     FILE *file;
 
-    file = fopen("second_floor.txt", "r+");
+    file = fopen("third_floor.txt", "r+");
     if (file == NULL) {
         perror("Error opening file");
         return 1;
@@ -1013,7 +1013,7 @@ int add_file_tf(int row, int col, char character) {
     return 0;
 }
 
-int generate_pass_key_tf(int y, int x) {
+int generate_pass_key_lf(int y, int x) {
     int pos = get_part_tf(y, x);
     srand(time(0));
     int password = 1000 + rand() % 9000;
@@ -1049,7 +1049,7 @@ int generate_pass_key_tf(int y, int x) {
     return password;
 }
 
-int get_part_tf(int y, int x) {
+int get_part_lf(int y, int x) {
     int part_width = 156 / 3;
     int part_height = 33 / 3;
 
@@ -1059,7 +1059,7 @@ int get_part_tf(int y, int x) {
     return row * 3 + col; // 0-based part index
 }
 
-int check_key_tf(int pos) {
+int check_key_lf(int pos) {
     int i = 0;   // Wrong attempt count
     while (1) {
         mvprintw(0, 2, "Enter key: ");
@@ -1092,7 +1092,7 @@ int check_key_tf(int pos) {
     return 0;
 }
 
-int reverse_number_tf(int num) {
+int reverse_number_lf(int num) {
     int reversed = 0;
 
     while (num != 0) {
@@ -1104,7 +1104,7 @@ int reverse_number_tf(int num) {
     return reversed;
 }
 
-void *change_able_pass_tf() {
+void *change_able_pass_lf() {
     while (1) {
         key_pair_tf[2] = 1000 + rand() % 9000;
         key_pair_tf[5] = 1000 + rand() % 9000;
@@ -1114,7 +1114,7 @@ void *change_able_pass_tf() {
     return NULL;
 }
 
-void *draw_health_bar_tf() {
+void *draw_health_bar_lf() {
     init_pair(1, COLOR_GREEN, COLOR_GREEN);
     while (!stop_thread_tf) {
         //  move(0, 0);  // Move to line 5, column 0
