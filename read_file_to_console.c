@@ -3,7 +3,7 @@
 int main() {
     FILE *file;
     char ch;
-    file = fopen("example.txt", "r");
+    file = fopen("first_floor.txt", "r");
     if (file == NULL) {
         perror("Error opening file");
         return 1;

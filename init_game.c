@@ -8,75 +8,74 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h> // For usleep
-#include "game.c"
 #include <locale.h>
+#include "2_floor.c"
 
 typedef struct {
     int y;
     int x;
     int size;
-} room;
+} room_ff;
 
 typedef struct {
     char symbol;   // Symbol to display (e.g., 'p')
     bool visible;  // Visibility state
-} Cell;
-room rooms[6];
-int health=101;
-int room_num = 0;
-int show_map = 0;
-#define MAX_HEALTH 100
-volatile bool stop_thread = false;
-#define MAP_ROWS 36
-#define MAP_COLS 160
-int room_type = 0;
-Cell map[MAP_ROWS][MAP_COLS];
-int key_pair[9];
-int DELAY = 100000;
-int x = 0, y = 0;
-int show_health_bar = 0;
+} Cell_ff;
+room_ff rooms_ff[6];
+int health_ff = 101;
+int room_num_ff = 0;
+int show_map_ff = 0;
+#define MAX_HEALTH_ff 100
+volatile bool stop_thread_ff = false;
+#define MAP_ROWS_ff 36
+#define MAP_COLS_ff 160
+int room_type_ff = 0;
+Cell_ff map_ff[MAP_ROWS_ff][MAP_COLS_ff];
+int key_pair_ff[9];
+int x_ff = 0, y_ff = 0;
+int show_health_bar_ff = 0;
 
-void get_parts_sf(int *rands);
+void get_parts_ff(int *rands);
 
-void draw_room_sf();
+void draw_room_ff();
 
-void *draw_health_bar();
+void *draw_health_bar_ff();
 
-void *change_able_pass_sf();
+void *change_able_pass_ff();
 
-void update_visibility(int player_y, int player_x);
+void update_visibility_ff(int player_y, int player_x);
 
-int rands_sf[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
+int rands_ff[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, int tmp2);
+void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, int tmp2);
 
-void fill_room_out_window_sf(int start_row, int start_col, int height, int width);
+void fill_room_out_window_ff(int start_row, int start_col, int height, int width);
 
-void fill_room_out_door_sf(int start_row, int start_col, int height, int width);
+void fill_room_out_door_ff(int start_row, int start_col, int height, int width);
 
-void put_corridor_sf(int start_row, int start_col);
+void put_corridor_ff(int start_row, int start_col);
 
-int add_file_sf(int row, int col, char character);
+int add_file_ff(int row, int col, char character);
 
-void draw_rectangle_sf(int start_row, int start_col, int height, int width);
+void draw_rectangle_ff(int start_row, int start_col, int height, int width);
 
-int reverse_number_sf(int num);
+int reverse_number_ff(int num);
 
-int generate_pass_key_sf(int y, int x);
+int generate_pass_key_ff(int y, int x);
 
-int check_key_sf(int pos);
+int check_key_ff(int pos);
 
-void free_map_sf();
+void free_map_ff();
 
-int get_part_sf(int y, int x);
+int get_part_ff(int y, int x);
 
-void move_to_second_line_sf(FILE *file);
+void move_to_second_line_ff(FILE *file);
 
-void load_map_from_file_sf();
+void load_map_from_file_ff();
 
-void draw_map_to_terminal_sf();
+void draw_map_to_terminal_ff();
 
-void move_to_second_line_sf(FILE *file) {
+void move_to_second_line_ff(FILE *file) {
     char buffer[1024]; // Buffer to hold the first line
 
     // Read and discard the first line
@@ -85,70 +84,49 @@ void move_to_second_line_sf(FILE *file) {
     }
 }
 
-void load_map_from_file_sf() {
-    FILE *file = fopen("example.txt", "r");
-    move_to_second_line_sf(file);
+void load_map_from_file_ff() {
+    FILE *file = fopen("first_floor.txt", "r");
+    move_to_second_line_ff(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
         perror("Error opening file");
-        // Initialize map with default values if file doesn't exist
-        for (int i = 0; i < MAP_ROWS; i++) {
-            memset(map[i], '.', MAP_COLS);
-            map[i][MAP_COLS].symbol = '\0';
+        // Initialize map_ff with default values if file doesn't exist
+        for (int i = 0; i < MAP_ROWS_ff; i++) {
+            memset(map_ff[i], '.', MAP_COLS_ff);
+            map_ff[i][MAP_COLS_ff].symbol = '\0';
         }
         return;
     }
 
-    for (int i = 0; i < MAP_ROWS; i++) {
-        for (int j = 0; j < MAP_COLS; j++) {
+    for (int i = 0; i < MAP_ROWS_ff; i++) {
+        for (int j = 0; j < MAP_COLS_ff; j++) {
             int ch = fgetc(file); // Read character by character
             if (ch == EOF) {
-                map[i][j].symbol = ' '; // Fill remaining cells with dots if EOF is reached
+                map_ff[i][j].symbol = ' '; // Fill remaining cells with dots if EOF is reached
             } else if (ch == '\0') {
-                map[i][j].symbol = ' '; // Replace null character with space
+                map_ff[i][j].symbol = ' '; // Replace null character with space
             } else if (ch == '\n') {
-                map[i][j].symbol = '\n'; // Replace newline with dot (or another filler)
+                map_ff[i][j].symbol = '\n'; // Replace newline with dot (or another filler)
             } else {
-                map[i][j].symbol = (char) ch;
+                map_ff[i][j].symbol = (char) ch;
             }
-            map[i][j].visible = true;
-            if ((map[i][j].symbol == '^') || (map[i][j].symbol == '?'))
-                map[i][j].visible = false;
+            map_ff[i][j].visible = true;
+            if ((map_ff[i][j].symbol == '^') || (map_ff[i][j].symbol == '?'))
+                map_ff[i][j].visible = false;
         }
     }
 
     fclose(file);
 }
 
-
-void save_map_to_file(int y, int x) {
-    free_map_sf();
-    FILE *file = fopen("example.txt", "w");
-    if (!file) {
-        perror("Error opening file for writing");
-        return;
-    }
-
-    for (int i = 1; i < MAP_ROWS; i++) {
-        for (int j = 0; j < MAP_COLS; ++j) {
-            //fputc(map[i][j], file);
-            fprintf(file, "%s\n", map[i]);
-        }
-    }
-//    fseek(file, 0, SEEK_SET);
-//    fprintf(file, "%d %d\n", y, x);
-
-    fclose(file);
-}
-
-void update_visibility(int player_y, int player_x) {
-    if ((map[player_y - 2][player_x].symbol == '?' && !map[player_y - 2][player_x].visible) ||
-        (map[player_y - 2][player_x].symbol == '^' && !map[player_y - 2][player_x].visible)) {
-        map[player_y - 2][player_x].visible = true; // Make the hidden 'p' visible
+void update_visibility_ff(int player_y, int player_x) {
+    if ((map_ff[player_y - 2][player_x].symbol == '?' && !map_ff[player_y - 2][player_x].visible) ||
+        (map_ff[player_y - 2][player_x].symbol == '^' && !map_ff[player_y - 2][player_x].visible)) {
+        map_ff[player_y - 2][player_x].visible = true; // Make the hidden 'p' visible
     }
 }
 
-void draw_map_to_terminal_sf() {
+void draw_map_to_terminal_ff() {
     clear();
     if (has_colors()) {
         start_color();
@@ -160,55 +138,56 @@ void draw_map_to_terminal_sf() {
         init_pair(6, COLOR_CYAN, COLOR_BLACK);
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
     }// Clear the screen
-    for (int i = 0; i < MAP_ROWS; i++) {
-        for (int j = 0; j < MAP_COLS; j++) {
+    for (int i = 0; i < MAP_ROWS_ff; i++) {
+        for (int j = 0; j < MAP_COLS_ff; j++) {
             int c = 0;
-            int pos = get_part_sf(i, j);
-            int pos2 = get_part_sf(y, x);
+            int pos = get_part_ff(i, j);
+            int pos2 = get_part_ff(y_ff, x_ff);
             int tmp = 0;
             for (int k = 0; k < pos2; ++k) {
-                if (rands_sf[k] == 1)
+                if (rands_ff[k] == 1)
                     tmp++;
             }
             pos2 = tmp;
             for (int i = 0; i <= pos; ++i) {
-                if (rands_sf[i] == 1) {
+                if (rands_ff[i] == 1) {
                     c++;
                 }
             }
-            if (c % 2 == 1 && rands_sf[pos] == 1) {
+            if (c % 2 == 1 && rands_ff[pos] == 1) {
                 attron(COLOR_PAIR(7));
-                show_health_bar = 1;
+                show_health_bar_ff = 1;
             }
-//            || map[i][j] == '*' || map[i][j] == '=' || map[i][j] == 's' ||
-//               map[i][j] == '+'
-            if (map[i][j].symbol == '#' || map[i][j].symbol == ' ')
+//            || map_ff[i][j] == '*' || map_ff[i][j] == '=' || map_ff[i][j] == 's' ||
+//               map_ff[i][j] == '+'
+            if (map_ff[i][j].symbol == '#' || map_ff[i][j].symbol == ' ')
                 attroff(COLOR_PAIR(7));
-            if (map[i][j].symbol == '@')
+            if (map_ff[i][j].symbol == '@')
                 attron(COLOR_PAIR(2));
-            if (map[i][j].symbol == 'M')
+            if (map_ff[i][j].symbol == 'M')
                 attron(COLOR_PAIR(3));
-            if (map[i][j].symbol == '&')
+            if (map_ff[i][j].symbol == '&')
                 attron(COLOR_PAIR(6));
-            if (map[i][j].symbol == 'j')
+            if (map_ff[i][j].symbol == 'j')
                 attron(COLOR_PAIR(5));
-            if (map[i][j].symbol == 'G')
+            if (map_ff[i][j].symbol == 'G')
                 attron(COLOR_PAIR(4));
-            int tar = show_map % 2 == 1;
+            int tar = show_map_ff % 2 == 1;
             if ((tar) ||
-                (i >= rooms[pos2].y - 2 && (i <= rooms[pos2].y + rooms[pos2].size - 2) && j >= rooms[pos2].x &&
-                 (j <= rooms[pos2].x + rooms[pos2].size))) {
-                if (map[i][j].symbol == '^' && map[i][j].visible == false) {
+                (i >= rooms_ff[pos2].y - 2 && (i <= rooms_ff[pos2].y + rooms_ff[pos2].size - 2) &&
+                 j >= rooms_ff[pos2].x &&
+                 (j <= rooms_ff[pos2].x + rooms_ff[pos2].size))) {
+                if (map_ff[i][j].symbol == '^' && map_ff[i][j].visible == false) {
                     mvaddch(i + 2, j, '.');
-                } else if (map[i][j].symbol == '?' && map[i][j].visible == false) {
+                } else if (map_ff[i][j].symbol == '?' && map_ff[i][j].visible == false) {
                     mvaddch(i + 2, j, '*');
-                } else { mvaddch(i + 2, j, map[i][j].symbol); }
-            } else if ((i <= y + 1) && (i >= y - 5) && (j <= x + 3) && (j >= x - 3)) {
-                if (map[i][j].symbol == '^' && map[i][j].visible == false) {
+                } else { mvaddch(i + 2, j, map_ff[i][j].symbol); }
+            } else if ((i <= y_ff + 1) && (i >= y_ff - 5) && (j <= x_ff + 3) && (j >= x_ff - 3)) {
+                if (map_ff[i][j].symbol == '^' && map_ff[i][j].visible == false) {
                     mvaddch(i + 2, j, '.');
-                } else if (map[i][j].symbol == '?' && map[i][j].visible == false) {
+                } else if (map_ff[i][j].symbol == '?' && map_ff[i][j].visible == false) {
                     mvaddch(i + 2, j, '*');
-                } else { mvaddch(i + 2, j, map[i][j].symbol); }
+                } else { mvaddch(i + 2, j, map_ff[i][j].symbol); }
             } else {
                 attroff(COLOR_PAIR(2));
                 attroff(COLOR_PAIR(6));
@@ -224,21 +203,21 @@ void draw_map_to_terminal_sf() {
             attroff(COLOR_PAIR(5));
             attroff(COLOR_PAIR(4));
             attroff(COLOR_PAIR(7));
-            show_health_bar = 0;
-            if (map[i][j].symbol == '\n') {
+            show_health_bar_ff = 0;
+            if (map_ff[i][j].symbol == '\n') {
 
             }
             refresh();// Print each character individually
         }
     }
-    move(map[0][0].symbol, map[0][2].symbol);
+    move(map_ff[0][0].symbol, map_ff[0][2].symbol);
     refresh();
 }
 
 
-void free_map_sf() {
+void free_map_ff() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("example.txt", "w");
+    FILE *file = fopen("first_floor.txt", "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -251,69 +230,69 @@ void free_map_sf() {
 }
 
 
-void draw_rectangle_sf(int start_row, int start_col, int height, int width) {
+void draw_rectangle_ff(int start_row, int start_col, int height, int width) {
     height++;
     width++;
-    rooms[room_num].y = start_row;
-    rooms[room_num].x = start_col;
-    rooms[room_num].size = height;
+    rooms_ff[room_num_ff].y = start_row;
+    rooms_ff[room_num_ff].x = start_col;
+    rooms_ff[room_num_ff].size = height;
 
     for (int i = start_col; i <= start_col + width; ++i) {
-        add_file_sf(start_row, i, '*');
+        add_file_ff(start_row, i, '*');
         mvaddch(start_row, i, '*');
         refresh();
-        add_file_sf(start_row + height, i, '*');
+        add_file_ff(start_row + height, i, '*');
         mvaddch(start_row + height, i, '*');
         refresh();
     }
     for (int i = start_row; i <= start_row + height; ++i) {
-        add_file_sf(i, start_col, '*');
+        add_file_ff(i, start_col, '*');
         mvaddch(i, start_col, '*');
         refresh();
-        add_file_sf(i, start_col + width, '*');
+        add_file_ff(i, start_col + width, '*');
         mvaddch(i, start_col + width, '*');
         refresh();
     }
-    room_num++;
+    room_num_ff++;
 }
 
-void draw_border() {
-    free_map_sf();
-    add_file_sf(2, 1, '#');
+void draw_border_ff() {
+    free_map_ff();
+    add_file_ff(2, 1, '#');
     mvaddch(2, 1, '#');
     for (int i = 2; i < 36; ++i) {
-        add_file_sf(i, 2, '#');
+        add_file_ff(i, 2, '#');
         mvaddch(i, 3 - 1, '#');
         refresh();
-        add_file_sf(i, 54, '#');
+        add_file_ff(i, 54, '#');
         mvaddch(i, 55 - 1, '#');
         refresh();
-        add_file_sf(i, 106, '#');
+        add_file_ff(i, 106, '#');
         mvaddch(i, 107 - 1, '#');
         refresh();
-        add_file_sf(i, 158, '#');
+        add_file_ff(i, 158, '#');
         mvaddch(i, 159 - 1, '#');
         refresh();
     }
 
     for (int i = 2; i < 159; ++i) {
-        add_file_sf(2, i, '#');
+        add_file_ff(2, i, '#');
         mvaddch(3 - 1, i, '#');
         refresh();
-        add_file_sf(13, i, '#');
+        add_file_ff(13, i, '#');
         mvaddch(14 - 1, i, '#');
         refresh();
-        add_file_sf(24, i, '#');
+        add_file_ff(24, i, '#');
         mvaddch(25 - 1, i, '#');
         refresh();
-        add_file_sf(35, i, '#');
+        add_file_ff(35, i, '#');
         mvaddch(36 - 1, i, '#');
         refresh();
     }
 
 }
 
-int new_game() {
+int first_floor() {
 
     int ch;
     // Cursor starting position
@@ -335,52 +314,52 @@ int new_game() {
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
 
     }
-    draw_border();
-    get_parts_sf(rands_sf);
-    draw_room_sf();
+    draw_border_ff();
+    get_parts_ff(rands_ff);
+    draw_room_ff();
     clear();
     refresh();
-    load_map_from_file_sf();
-    draw_map_to_terminal_sf();
-    move(y, x);
+    load_map_from_file_ff();
+    draw_map_to_terminal_ff();
+    move(y_ff, x_ff);
     pthread_t thread_id;
-    pthread_create(&thread_id, NULL, change_able_pass_sf, NULL);
+    pthread_create(&thread_id, NULL, change_able_pass_ff, NULL);
     while ((ch = getch()) != 'q') {
         if (ch == 'f') {
             ch = getch();
             switch (ch) {
                 case KEY_UP:
-                    while (y > 0) {
-                        y--;
-                        if ((mvinch(y, x) & A_CHARTEXT) != '.' && (mvinch(y, x) & A_CHARTEXT) != '#') {
-                            y++;
+                    while (y_ff > 0) {
+                        y_ff--;
+                        if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
+                            y_ff++;
                             break;
                         }
                     }
                     break;
                 case KEY_DOWN:
-                    while (y < MAP_ROWS - 1) {
-                        y++;
-                        if ((mvinch(y, x) & A_CHARTEXT) != '.' && (mvinch(y, x) & A_CHARTEXT) != '#') {
-                            y--;
+                    while (y_ff < MAP_ROWS_ff - 1) {
+                        y_ff++;
+                        if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
+                            y_ff--;
                             break;
                         }
                     }
                     break;
                 case KEY_LEFT:
-                    while (x > 0) {
-                        x--;
-                        if ((mvinch(y, x) & A_CHARTEXT) != '.' && (mvinch(y, x) & A_CHARTEXT) != '#') {
-                            x++;
+                    while (x_ff > 0) {
+                        x_ff--;
+                        if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
+                            x_ff++;
                             break;
                         }
                     }
                     break;
                 case KEY_RIGHT:
-                    while (x < MAP_COLS - 1) {
-                        x++;
-                        if ((mvinch(y, x) & A_CHARTEXT) != '.' && (mvinch(y, x) & A_CHARTEXT) != '#') {
-                            x--;
+                    while (x_ff < MAP_COLS_ff - 1) {
+                        x_ff++;
+                        if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
+                            x_ff--;
                             break;
                         }
                     }
@@ -391,201 +370,204 @@ int new_game() {
             case 'e':
                 clear();
                 eat_food();
-                load_map_from_file_sf();
-                draw_map_to_terminal_sf();
+                load_map_from_file_ff();
+                draw_map_to_terminal_ff();
                 break;
             case 'j':
                 clear();
                 display_spell();
-                load_map_from_file_sf();
-                draw_map_to_terminal_sf();
+                load_map_from_file_ff();
+                draw_map_to_terminal_ff();
                 break;
             case 'i':
                 clear();
                 display_guns();
-                load_map_from_file_sf();
-                draw_map_to_terminal_sf();
+                load_map_from_file_ff();
+                draw_map_to_terminal_ff();
                 break;
             case 'v':
-                show_map++;
-                draw_map_to_terminal_sf();
+                show_map_ff++;
+                draw_map_to_terminal_ff();
                 break;
             case KEY_UP:
-                if (y > 0) y--;
-                update_visibility(y, x);
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o' || (mvinch(y, x) & A_CHARTEXT) == '=') {
-                    y++;
+                if (y_ff > 0) y_ff--;
+                update_visibility_ff(y_ff, x_ff);
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
+                    y_ff++;
                 }
                 break;
             case KEY_DOWN:
-                if (y < MAP_ROWS - 1) y++;
-                update_visibility(y, x);
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o' || (mvinch(y, x) & A_CHARTEXT) == '=') {
-                    y--;
+                if (y_ff < MAP_ROWS_ff - 1) y_ff++;
+                update_visibility_ff(y_ff, x_ff);
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
+                    y_ff--;
                 }
                 break;
             case KEY_LEFT:
-                if (x > 0) x--;
-                update_visibility(y, x);
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o' || (mvinch(y, x) & A_CHARTEXT) == '=') {
-                    x++;
+                if (x_ff > 0) x_ff--;
+                update_visibility_ff(y_ff, x_ff);
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
+                    x_ff++;
                 }
                 break;
             case KEY_RIGHT:
-                if (x < MAP_COLS - 1) x++;
-                update_visibility(y, x);
+                if (x_ff < MAP_COLS_ff - 1) x_ff++;
+                update_visibility_ff(y_ff, x_ff);
 
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o' || (mvinch(y, x) & A_CHARTEXT) == '=') {
-                    x--;
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
+                    x_ff--;
                 }
                 break;
             case 'p':
-                if (y > 0) y--;
-                if (x < MAP_COLS - 1) x++;
-                update_visibility(y, x);
+                if (y_ff > 0) y_ff--;
+                if (x_ff < MAP_COLS_ff - 1) x_ff++;
+                update_visibility_ff(y_ff, x_ff);
 
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o') {
-                    y++;
-                    x--;
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
+                    y_ff++;
+                    x_ff--;
                 }
                 break;
             case 'w':
-                if (y > 0) y--;
-                if (x > 0) x--;
-                update_visibility(y, x);
+                if (y_ff > 0) y_ff--;
+                if (x_ff > 0) x_ff--;
+                update_visibility_ff(y_ff, x_ff);
 
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o') {
-                    y++;
-                    x++;
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
+                    y_ff++;
+                    x_ff++;
                 }
                 break;
             case ',':
-                if (y < MAP_ROWS - 1) y++;
-                if (x < MAP_COLS - 1) x++;
-                update_visibility(y, x);
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o') {
-                    y--;
-                    x--;
+                if (y_ff < MAP_ROWS_ff - 1) y_ff++;
+                if (x_ff < MAP_COLS_ff - 1) x_ff++;
+                update_visibility_ff(y_ff, x_ff);
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
+                    y_ff--;
+                    x_ff--;
                 }
                 break;
             case 'z':
-                if (x > 0) x--;
-                if (y < MAP_COLS - 1) y++;
-                update_visibility(y, x);
+                if (x_ff > 0) x_ff--;
+                if (y_ff < MAP_COLS_ff - 1) y_ff++;
+                update_visibility_ff(y_ff, x_ff);
 
-                if ((mvinch(y, x) & A_CHARTEXT) == '*' || (mvinch(y, x) & A_CHARTEXT) == ' ' ||
-                    (mvinch(y, x) & A_CHARTEXT) == 'o') {
-                    y--;
-                    x++;
+                if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
+                    (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
+                    y_ff--;
+                    x_ff++;
                 }
                 break;
             case ' ':
-                map[y][x].symbol = (map[y][x].symbol == '.') ? '#' : '.';
+                map_ff[y_ff][x_ff].symbol = (map_ff[y_ff][x_ff].symbol == '.') ? '#' : '.';
                 break;
         }
-        update_visibility(y, x);
-        draw_map_to_terminal_sf();
-        if (x < 1) x = 1;
-        if (y >= 35) y = 35;
-        if (y < 2) y = 2;
-        if (x >= 161) x = 161;
-        move(y, x);
-        if (((mvinch(y, x) & A_CHARTEXT) == '&')) {
-            generate_pass_key_sf(y, x);
+        update_visibility_ff(y_ff, x_ff);
+        draw_map_to_terminal_ff();
+        if (x_ff < 1) x_ff = 1;
+        if (y_ff >= 35) y_ff = 35;
+        if (y_ff < 2) y_ff = 2;
+        if (x_ff >= 161) x_ff = 161;
+        move(y_ff, x_ff);
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '&')) {
+            generate_pass_key_ff(y_ff, x_ff);
         }
-        if (((mvinch(y, x) & A_CHARTEXT) == '@')) {
-            int pos = get_part_sf(y, x);
-            check_key_sf(pos);
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '<')) {
+            stop_thread_ff = true;
+            second_floor();
+        }
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '@')) {
+            int pos = get_part_ff(y_ff, x_ff);
+            check_key_ff(pos);
             attron(COLOR_PAIR(3));
-            mvaddch(y, x, '@');
+            mvaddch(y_ff, x_ff, '@');
             attroff(COLOR_PAIR(3));
         }
-        chtype ch = mvinch(y, x);
+        chtype ch = mvinch(y_ff, x_ff);
         chtype attributes = ch & A_ATTRIBUTES;
         int color_pair = PAIR_NUMBER(attributes);
         if (color_pair == 7) {
-            stop_thread = false;
+            stop_thread_ff = false;
             pthread_t thread_id;
-            pthread_create(&thread_id, NULL, draw_health_bar, NULL);
+            pthread_create(&thread_id, NULL, draw_health_bar_ff, NULL);
         }
-        if (((mvinch(y, x) & A_CHARTEXT) == '#')) {
-            stop_thread = true;
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '#')) {
+            stop_thread_ff = true;
         }
 
-        if (((mvinch(y, x) & A_CHARTEXT) == 'G') || (mvinch(y, x) & A_CHARTEXT) == '$') {
-            int achived_gold = calc_gold((mvinch(y, x) & A_CHARTEXT));
-            add_file_sf(y, x, '.');
-            mvaddch(y, x, '.');
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'G') || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '$') {
+            int achived_gold = calc_gold((mvinch(y_ff, x_ff) & A_CHARTEXT));
+            add_file_ff(y_ff, x_ff, '.');
+            mvaddch(y_ff, x_ff, '.');
             mvprintw(1, 2, "you achived %d golds", achived_gold);
             getch();
-            load_map_from_file_sf();
-            draw_map_to_terminal_sf();
+            load_map_from_file_ff();
+            draw_map_to_terminal_ff();
             refresh();
         }
-        if (((mvinch(y, x) & A_CHARTEXT) == 'M') || (mvinch(y, x) & A_CHARTEXT) == 'D' ||
-            (mvinch(y, x) & A_CHARTEXT) == 'W' || (mvinch(y, x) & A_CHARTEXT) == 'A' ||
-            (mvinch(y, x) & A_CHARTEXT) == 'S') {
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M') || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'D' ||
+            (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'W' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'A' ||
+            (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'S') {
             char inp = getch();
             if (inp == 'g') {
-                calc_gun(mvinch(y, x) & A_CHARTEXT);
-                add_file_sf(y, x, '.');
-                mvaddch(y, x, '.');
-                load_map_from_file_sf();
-                draw_map_to_terminal_sf();
+                calc_gun(mvinch(y_ff, x_ff) & A_CHARTEXT);
+                add_file_ff(y_ff, x_ff, '.');
+                mvaddch(y_ff, x_ff, '.');
+                load_map_from_file_ff();
+                draw_map_to_terminal_ff();
             }
         }
-        if (((mvinch(y, x) & A_CHARTEXT) == 'h') || (mvinch(y, x) & A_CHARTEXT) == 's' ||
-            (mvinch(y, x) & A_CHARTEXT) == 'd') {
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'h') || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 's' ||
+            (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'd') {
             char inp = getch();
             if (inp == 'g') {
-                calc_spell(mvinch(y, x) & A_CHARTEXT);
-                add_file_sf(y, x, '.');
-                mvaddch(y, x, '.');
-                load_map_from_file_sf();
-                draw_map_to_terminal_sf();
+                calc_spell(mvinch(y_ff, x_ff) & A_CHARTEXT);
+                add_file_ff(y_ff, x_ff, '.');
+                mvaddch(y_ff, x_ff, '.');
+                load_map_from_file_ff();
+                draw_map_to_terminal_ff();
             }
         }
-        if (((mvinch(y, x) & A_CHARTEXT) == 'n') || (mvinch(y, x) & A_CHARTEXT) == 'm' ||
-            (mvinch(y, x) & A_CHARTEXT) == 'b' || (mvinch(y, x) & A_CHARTEXT) == 'c') {
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'n') || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'm' ||
+            (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'b' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'c') {
             char inp = getch();
             if (inp == 'g') {
-                int food_res = calc_food(mvinch(y, x) & A_CHARTEXT);
-                if(food_res) {
-                    add_file_sf(y, x, '.');
-                    mvaddch(y, x, '.');
-                    load_map_from_file_sf();
-                    draw_map_to_terminal_sf();
-                }
-                else{
+                int food_res = calc_food(mvinch(y_ff, x_ff) & A_CHARTEXT);
+                if (food_res) {
+                    add_file_ff(y_ff, x_ff, '.');
+                    mvaddch(y_ff, x_ff, '.');
+                    load_map_from_file_ff();
+                    draw_map_to_terminal_ff();
+                } else {
                     mvprintw(1, 2, "you already have maximum(5) food");
                     getch();
-                    load_map_from_file_sf();
-                    draw_map_to_terminal_sf();
+                    load_map_from_file_ff();
+                    draw_map_to_terminal_ff();
                     refresh();
                 }
             }
         }
 
-        move(y, x);
+        move(y_ff, x_ff);
 //        getch();
 //        mvaddch(10,3,'T');
 //        refresh();
     }
 
-    // save_map_to_file(y,x);
+    // save_map_to_file(y_ff,x_ff);
 
     endwin();
     return 0;
 }
 
-void previous_game() {
+void previous_game_ff() {
     int ch;// Cursor starting position
     srand(time(NULL));
     initscr();
@@ -594,46 +576,46 @@ void previous_game() {
     resize_term(37, 162);
     keypad(stdscr, TRUE);
     curs_set(1);
-    load_map_from_file_sf();
+    load_map_from_file_ff();
 
-    draw_map_to_terminal_sf();
-    move(y, x);
+    draw_map_to_terminal_ff();
+    move(y_ff, x_ff);
 
     while ((ch = getch()) != 'q') { // Press 'q' to quit
         switch (ch) {
             case KEY_UP:
-                if (y > 0) y--;
+                if (y_ff > 0) y_ff--;
                 break;
             case KEY_DOWN:
-                if (y < MAP_ROWS - 1) y++;
+                if (y_ff < MAP_ROWS_ff - 1) y_ff++;
                 break;
             case KEY_LEFT:
-                if (x > 0) x--;
+                if (x_ff > 0) x_ff--;
                 break;
             case KEY_RIGHT:
-                if (x < MAP_COLS - 1) x++;
+                if (x_ff < MAP_COLS_ff - 1) x_ff++;
                 break;
             case ' ':
-                map[y][x].symbol = (map[y][x].symbol == '.') ? '#' : '.';
+                map_ff[y_ff][x_ff].symbol = (map_ff[y_ff][x_ff].symbol == '.') ? '#' : '.';
                 break;
         }
 
-        draw_map_to_terminal_sf();
-        if (x < 3) x = 3;
-        if (y >= 34) y = 34;
-        if (y < 3) y = 3;
-        if (x >= 158) x = 158;
-        move(y, x);
+        draw_map_to_terminal_ff();
+        if (x_ff < 3) x_ff = 3;
+        if (y_ff >= 34) y_ff = 34;
+        if (y_ff < 3) y_ff = 3;
+        if (x_ff >= 158) x_ff = 158;
+        move(y_ff, x_ff);
     }
 
-    //save_map_to_file(y,x);
+    //save_map_to_file(y_ff,x_ff);
 
     endwin();
     return;
 }
 
 
-void get_parts_sf(int *rands) {
+void get_parts_ff(int *rands) {
     int count = 0;
     while (true) {
         int rand_num = rand() % 9;
@@ -646,7 +628,7 @@ void get_parts_sf(int *rands) {
     }
 }
 
-void draw_room_sf() {
+void draw_room_ff() {
     int flag = 0;
     int flag2 = 0;
 
@@ -660,8 +642,8 @@ void draw_room_sf() {
         int start_row = rand() % 3;
         int start_col = rand() % 40;
         int size = (rand() % 3) + 4;
-        if (rands_sf[i] == 1) {
-            room_type++;
+        if (rands_ff[i] == 1) {
+            room_type_ff++;
             flag++;
             flag2++;
             if (flag == k) {
@@ -672,24 +654,24 @@ void draw_room_sf() {
             }
             start_row += 3 + 11 * (i / 3);
             start_col += 3 + 52 * (i % 3);
-            draw_rectangle_sf(start_row, start_col, size, size);
-            fill_room_sf(start_row, start_col, size, size, tmp, tmp2);
-            fill_room_out_window_sf(start_row, start_col, size, size);
-            fill_room_out_door_sf(start_row, start_col, size, size);
+            draw_rectangle_ff(start_row, start_col, size, size);
+            fill_room_ff(start_row, start_col, size, size, tmp, tmp2);
+            fill_room_out_window_ff(start_row, start_col, size, size);
+            fill_room_out_door_ff(start_row, start_col, size, size);
             tmp = 0;
             tmp2 = 0;
         }
     }
 }
 
-void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, int tmp2) {
+void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, int tmp2) {
     int o_num = rand() % 3;
     for (int i = start_col + 1; i <= start_col + width; ++i) {
         for (int j = start_row + 1; j <= start_row + height; ++j) {
-            add_file_sf(j, i, '.');
+            add_file_ff(j, i, '.');
             if (tmp) {
-                y = j;
-                x = i;
+                y_ff = j;
+                x_ff = i;
             }
             mvaddch(j, i, '.');
             refresh();
@@ -698,58 +680,53 @@ void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, 
     for (int i = 0; i < o_num; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'o');
+        add_file_ff(row, col, 'o');
         mvaddch(row, col, 'o');
     }
     for (int i = 0; i < o_num; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, '^');
+        add_file_ff(row, col, '^');
         mvaddch(row, col, '^');
     }
-    if (tmp2) {
-        int row = rand() % (height - 1) + start_row + 1;
-        int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, '<');
-        mvaddch(row, col, '<');
-    }
-    if (room_type % 2 != 1) {
+
+    if (room_type_ff % 2 != 1) {
         for (int i = 0; i < o_num; ++i) {
             int row = rand() % (height - 1) + start_row + 1;
             int col = rand() % (width - 1) + start_col + 1;
-            add_file_sf(row, col, 'h');
+            add_file_ff(row, col, 'h');
             mvaddch(row, col, 'h');
         }
         for (int i = 0; i < o_num; ++i) {
             int row = rand() % (height - 1) + start_row + 1;
             int col = rand() % (width - 1) + start_col + 1;
-            add_file_sf(row, col, 's');
+            add_file_ff(row, col, 's');
             mvaddch(row, col, 's');
         }
         for (int i = 0; i < o_num; ++i) {
             int row = rand() % (height - 1) + start_row + 1;
             int col = rand() % (width - 1) + start_col + 1;
-            add_file_sf(row, col, 'd');
+            add_file_ff(row, col, 'd');
             mvaddch(row, col, 'd');
         }
     }
-    if (room_type % 2 == 1) {
+    if (room_type_ff % 2 == 1) {
         for (int i = 0; i < o_num + 1; ++i) {
             int row = rand() % (height - 1) + start_row + 1;
             int col = rand() % (width - 1) + start_col + 1;
-            add_file_sf(row, col, 'h');
+            add_file_ff(row, col, 'h');
             mvaddch(row, col, 'h');
         }
         for (int i = 0; i < o_num + 1; ++i) {
             int row = rand() % (height - 1) + start_row + 1;
             int col = rand() % (width - 1) + start_col + 1;
-            add_file_sf(row, col, 's');
+            add_file_ff(row, col, 's');
             mvaddch(row, col, 's');
         }
         for (int i = 0; i < o_num + 1; ++i) {
             int row = rand() % (height - 1) + start_row + 1;
             int col = rand() % (width - 1) + start_col + 1;
-            add_file_sf(row, col, 'd');
+            add_file_ff(row, col, 'd');
             mvaddch(row, col, 'd');
         }
 
@@ -757,102 +734,108 @@ void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, 
     for (int i = 0; i < o_num; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'G');
+        add_file_ff(row, col, 'G');
         mvaddch(row, col, 'G');
     }
     int r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, '$');
+        add_file_ff(row, col, '$');
         mvaddch(row, col, '$');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'M');
+        add_file_ff(row, col, 'M');
         mvaddch(row, col, 'M');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'D');
+        add_file_ff(row, col, 'D');
         mvaddch(row, col, 'D');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'W');
+        add_file_ff(row, col, 'W');
         mvaddch(row, col, 'W');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'A');
+        add_file_ff(row, col, 'A');
         mvaddch(row, col, 'A');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'S');
+        add_file_ff(row, col, 'S');
         mvaddch(row, col, 'S');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'n');
+        add_file_ff(row, col, 'n');
         mvaddch(row, col, 'n');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'm');
+        add_file_ff(row, col, 'm');
         mvaddch(row, col, 'm');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'b');
+        add_file_ff(row, col, 'b');
         mvaddch(row, col, 'b');
     }
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, 'c');
+        add_file_ff(row, col, 'c');
         mvaddch(row, col, 'c');
+    }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_ff(row, col, '<');
+        mvaddch(row, col, '<');
     }
 }
 
-void fill_room_out_window_sf(int start_row, int start_col, int height, int width) {
+void fill_room_out_window_ff(int start_row, int start_col, int height, int width) {
     int index = rand() % (2 * (height + 1 + width + 1));
     if (index < width + 1) {
-        add_file_sf(start_row, start_col + index, '=');
+        add_file_ff(start_row, start_col + index, '=');
         mvaddch(start_row, start_col + index, '=');
     } else if (width < index && index < width + height + 2) {
         index -= (width + 1);
-        add_file_sf(start_row + index, start_col + width + 1, '=');
+        add_file_ff(start_row + index, start_col + width + 1, '=');
         mvaddch(start_row + index, start_col + width + 1, '=');
     } else if (width + height + 1 < index && index < width + height + width + 3) {
         index -= (width + height + 2);
-        add_file_sf(start_row + height + 1, start_col + width + 1 - index, '=');
+        add_file_ff(start_row + height + 1, start_col + width + 1 - index, '=');
         mvaddch(start_row + height + 1, start_col + width + 1 - index, '=');
     } else {
         index -= (width + height + width + 3);
-        add_file_sf(start_row + height + 1 - index, start_col, '=');
+        add_file_ff(start_row + height + 1 - index, start_col, '=');
         mvaddch(start_row + height + 1 - index, start_col, '=');
     }
 }
 
-void fill_room_out_door_sf(int start_row, int start_col, int height, int width) {
+void fill_room_out_door_ff(int start_row, int start_col, int height, int width) {
     int repeat = rand() % 2 + 1;
     int index = rand() % (2 * (height + 1 + width + 1));
 
@@ -865,69 +848,69 @@ void fill_room_out_door_sf(int start_row, int start_col, int height, int width) 
     if (repeat == 1) {
         int index = rand() % (2 * (height + 1 + width + 1));
         if (index < width + 1) {
-            add_file_sf(start_row, start_col + index, '?');
+            add_file_ff(start_row, start_col + index, '?');
             mvaddch(start_row, start_col + index, '?');
-            put_corridor_sf(start_row, start_col + index);
+            put_corridor_ff(start_row, start_col + index);
         } else if (width < index && index < width + height + 2) {
             index -= (width + 1);
-            add_file_sf(start_row + index, start_col + width + 1, '?');
+            add_file_ff(start_row + index, start_col + width + 1, '?');
             mvaddch(start_row + index, start_col + width + 1, '?');
-            put_corridor_sf(start_row + index, start_col + width + 1);
+            put_corridor_ff(start_row + index, start_col + width + 1);
         } else if (width + height + 1 < index && index < width + height + width + 3) {
             index -= (width + height + 2);
-            add_file_sf(start_row + height + 1, start_col + width + 1 - index, '?');
+            add_file_ff(start_row + height + 1, start_col + width + 1 - index, '?');
             mvaddch(start_row + height + 1, start_col + width + 1 - index, '?');
-            put_corridor_sf(start_row + height + 1, start_col + width + 1 - index);
+            put_corridor_ff(start_row + height + 1, start_col + width + 1 - index);
         } else {
             index -= (width + height + width + 3);
-            add_file_sf(start_row + height + 1 - index, start_col, '?');
+            add_file_ff(start_row + height + 1 - index, start_col, '?');
             mvaddch(start_row + height + 1 - index, start_col, '?');
-            put_corridor_sf(start_row + height + 1 - index, start_col);
+            put_corridor_ff(start_row + height + 1 - index, start_col);
         }
     }
     for (int i = 0; i < repeat; ++i) {
         int index = rand() % (2 * (height + 1 + width + 1));
         if (index < width + 1) {
-            add_file_sf(start_row, start_col + index, '+');
+            add_file_ff(start_row, start_col + index, '+');
             mvaddch(start_row, start_col + index, '+');
-            put_corridor_sf(start_row, start_col + index);
+            put_corridor_ff(start_row, start_col + index);
         } else if (width < index && index < width + height + 2) {
             index -= (width + 1);
-            add_file_sf(start_row + index, start_col + width + 1, '+');
+            add_file_ff(start_row + index, start_col + width + 1, '+');
             mvaddch(start_row + index, start_col + width + 1, '+');
-            put_corridor_sf(start_row + index, start_col + width + 1);
+            put_corridor_ff(start_row + index, start_col + width + 1);
         } else if (width + height + 1 < index && index < width + height + width + 3) {
             index -= (width + height + 2);
-            add_file_sf(start_row + height + 1, start_col + width + 1 - index, '+');
+            add_file_ff(start_row + height + 1, start_col + width + 1 - index, '+');
             mvaddch(start_row + height + 1, start_col + width + 1 - index, '+');
-            put_corridor_sf(start_row + height + 1, start_col + width + 1 - index);
+            put_corridor_ff(start_row + height + 1, start_col + width + 1 - index);
         } else {
             index -= (width + height + width + 3);
-            add_file_sf(start_row + height + 1 - index, start_col, '+');
+            add_file_ff(start_row + height + 1 - index, start_col, '+');
             mvaddch(start_row + height + 1 - index, start_col, '+');
-            put_corridor_sf(start_row + height + 1 - index, start_col);
+            put_corridor_ff(start_row + height + 1 - index, start_col);
         }
     }
     for (int i = 0; i < repeat - 1; ++i) {
         if (index < width + 1) {
-            add_file_sf(start_row, start_col + index, '@');
+            add_file_ff(start_row, start_col + index, '@');
             mvaddch(start_row, start_col + index, '@');
-            put_corridor_sf(start_row, start_col + index);
+            put_corridor_ff(start_row, start_col + index);
         } else if (width < index && index < width + height + 2) {
             index -= (width + 1);
-            add_file_sf(start_row + index, start_col + width + 1, '@');
+            add_file_ff(start_row + index, start_col + width + 1, '@');
             mvaddch(start_row + index, start_col + width + 1, '@');
-            put_corridor_sf(start_row + index, start_col + width + 1);
+            put_corridor_ff(start_row + index, start_col + width + 1);
         } else if (width + height + 1 < index && index < width + height + width + 3) {
             index -= (width + height + 2);
-            add_file_sf(start_row + height + 1, start_col + width + 1 - index, '@');
+            add_file_ff(start_row + height + 1, start_col + width + 1 - index, '@');
             mvaddch(start_row + height + 1, start_col + width + 1 - index, '@');
-            put_corridor_sf(start_row + height + 1, start_col + width + 1 - index);
+            put_corridor_ff(start_row + height + 1, start_col + width + 1 - index);
         } else {
             index -= (width + height + width + 3);
-            add_file_sf(start_row + height + 1 - index, start_col, '@');
+            add_file_ff(start_row + height + 1 - index, start_col, '@');
             mvaddch(start_row + height + 1 - index, start_col, '@');
-            put_corridor_sf(start_row + height + 1 - index, start_col);
+            put_corridor_ff(start_row + height + 1 - index, start_col);
         }
     }
     if (repeat == 2) {
@@ -936,29 +919,29 @@ void fill_room_out_door_sf(int start_row, int start_col, int height, int width) 
         width -= 2;
         height -= 2;
         if (index < width + 1) {
-            add_file_sf(start_row, start_col, '&');
+            add_file_ff(start_row, start_col, '&');
             mvaddch(start_row, start_col, '&');
         } else if (width < index && index < width + height + 2) {
             index -= (width + 1);
-            add_file_sf(start_row, start_col + width + 1, '&');
+            add_file_ff(start_row, start_col + width + 1, '&');
             mvaddch(start_row, start_col + width + 1, '&');
         } else if (width + height + 1 < index && index < width + height + width + 3) {
             index -= (width + height + 2);
-            add_file_sf(start_row + height + 1, start_col + width + 1, '&');
+            add_file_ff(start_row + height + 1, start_col + width + 1, '&');
             mvaddch(start_row + height + 1, start_col + width + 1, '&');
         } else {
             index -= (width + height + width + 3);
-            add_file_sf(start_row + height + 1, start_col, '&');
+            add_file_ff(start_row + height + 1, start_col, '&');
             mvaddch(start_row + height + 1, start_col, '&');
         }
     }
 }
 
-void put_corridor_sf(int start_row, int start_col) {
+void put_corridor_ff(int start_row, int start_col) {
     int flag = 0;
     while ((mvinch(start_row + 1, start_col) & A_CHARTEXT) == ' ') {
         flag = 1;
-        add_file_sf(start_row + 1, start_col, '#');
+        add_file_ff(start_row + 1, start_col, '#');
         mvaddch(start_row + 1, start_col, '#');
         start_row++;
     }
@@ -966,7 +949,7 @@ void put_corridor_sf(int start_row, int start_col) {
         return;
     while ((mvinch(start_row, start_col + 1) & A_CHARTEXT) == ' ') {
         flag = 1;
-        add_file_sf(start_row, start_col + 1, '#');
+        add_file_ff(start_row, start_col + 1, '#');
         mvaddch(start_row, start_col + 1, '#');
         start_col++;
     }
@@ -974,18 +957,18 @@ void put_corridor_sf(int start_row, int start_col) {
         return;
     while ((mvinch(start_row - 1, start_col) & A_CHARTEXT) == ' ') {
         flag = 1;
-        add_file_sf(start_row - 1, start_col, '#');
+        add_file_ff(start_row - 1, start_col, '#');
         mvaddch(start_row - 1, start_col, '#');
         start_row--;
     }
     if (flag)
         return;
     while ((mvinch(start_row, start_col - 1) & A_CHARTEXT) == ' ') {
-        add_file_sf(start_row, start_col - 1, '#');
+        add_file_ff(start_row, start_col - 1, '#');
         mvaddch(start_row, start_col - 1, '#');
         start_col--;
         if (start_col == 3) {
-            add_file_sf(start_row, 2, '#');
+            add_file_ff(start_row, 2, '#');
             mvaddch(start_row, 2, '#');
         }
     }
@@ -995,10 +978,10 @@ void put_corridor_sf(int start_row, int start_col) {
 
 #include <stdio.h>
 
-int add_file_sf(int row, int col, char character) {
+int add_file_ff(int row, int col, char character) {
     FILE *file;
 
-    file = fopen("example.txt", "r+");
+    file = fopen("first_floor.txt", "r+");
     if (file == NULL) {
         perror("Error opening file");
         return 1;
@@ -1032,8 +1015,8 @@ int add_file_sf(int row, int col, char character) {
     return 0;
 }
 
-int generate_pass_key_sf(int y, int x) {
-    int pos = get_part_sf(y, x);
+int generate_pass_key_ff(int y, int x) {
+    int pos = get_part_ff(y, x);
     srand(time(0));
     int password = 1000 + rand() % 9000;
 
@@ -1063,12 +1046,12 @@ int generate_pass_key_sf(int y, int x) {
     clrtoeol();
     refresh();
     // End ncurses mode
-    key_pair[pos] = password;
+    key_pair_ff[pos] = password;
 //    endwin();
     return password;
 }
 
-int get_part_sf(int y, int x) {
+int get_part_ff(int y, int x) {
     int part_width = 156 / 3;
     int part_height = 33 / 3;
 
@@ -1078,14 +1061,14 @@ int get_part_sf(int y, int x) {
     return row * 3 + col; // 0-based part index
 }
 
-int check_key_sf(int pos) {
+int check_key_ff(int pos) {
     int i = 0;   // Wrong attempt count
     while (1) {
         mvprintw(0, 2, "Enter key: ");
         int password;
         scanw("%d", &password);
-        int r_key = reverse_number_sf(key_pair[pos]);
-        if ((key_pair[pos] != password) && (r_key != password)) {
+        int r_key = reverse_number_ff(key_pair_ff[pos]);
+        if ((key_pair_ff[pos] != password) && (r_key != password)) {
             if (i == 0) {
                 mvprintw(1, 2, "warning you entered first wrong password!        ");
             } else if (i == 1) {
@@ -1111,7 +1094,7 @@ int check_key_sf(int pos) {
     return 0;
 }
 
-int reverse_number_sf(int num) {
+int reverse_number_ff(int num) {
     int reversed = 0;
 
     while (num != 0) {
@@ -1123,49 +1106,49 @@ int reverse_number_sf(int num) {
     return reversed;
 }
 
-void *change_able_pass_sf() {
+void *change_able_pass_ff() {
     while (1) {
-        key_pair[2] = 1000 + rand() % 9000;
-        key_pair[5] = 1000 + rand() % 9000;
-        key_pair[8] = 1000 + rand() % 9000;
+        key_pair_ff[2] = 1000 + rand() % 9000;
+        key_pair_ff[5] = 1000 + rand() % 9000;
+        key_pair_ff[8] = 1000 + rand() % 9000;
         sleep(5);
     }
     return NULL;
 }
 
-void *draw_health_bar() {
+void *draw_health_bar_ff() {
     init_pair(1, COLOR_GREEN, COLOR_GREEN);
-    while (!stop_thread) {
+    while (!stop_thread_ff) {
         //  move(0, 0);  // Move to line 5, column 0
         // clrtoeol();
         // refresh();
         //  move(1, 0);  // Move to line 5, column 0
         // clrtoeol();
         //  refresh();
-        int width = 50; // Width of the health bar
-        int bar_length = (health * width) / MAX_HEALTH;
-        health--;
-        // Draw the label and open the health bar
+        int width = 50; // Width of the health_ff bar
+        int bar_length = (health_ff * width) / MAX_HEALTH_ff;
+        health_ff--;
+        // Draw the label and open the health_ff bar
         mvprintw(0, 2, "Health: [");
 
-        // Draw the green part of the health bar
+        // Draw the green part of the health_ff bar
         attron(COLOR_PAIR(1));
         for (int i = 0; i < bar_length; i++) {
             mvaddch(0, 10 + i, ' ');
         }
         attroff(COLOR_PAIR(1));
 
-        // Draw the empty part of the health bar
+        // Draw the empty part of the health_ff bar
         for (int i = bar_length; i < width; i++) {
             mvaddch(0, 10 + i, ' ');
         }
 
-        // Close the health bar
+        // Close the health_ff bar
         mvaddch(0, 10 + width, ']');
 
-        // Display the current health value below the bar
-        mvprintw(1, 2, "Current Health: %d%%", health);
-        move(y, x);
+        // Display the current health_ff value below the bar
+        mvprintw(1, 2, "Current Health: %d%%", health_ff);
+        move(y_ff, x_ff);
         refresh();
         sleep(1);
     }

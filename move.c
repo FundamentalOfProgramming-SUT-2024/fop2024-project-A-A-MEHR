@@ -19,7 +19,7 @@ void move_to_second_line(FILE *file) {
 }
 
 void load_map_from_file() {
-    FILE *file = fopen("example.txt", "r");
+    FILE *file = fopen("first_floor.txt", "r");
     move_to_second_line(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
@@ -53,7 +53,7 @@ void load_map_from_file() {
 
 void save_map_to_file(int y, int x) {
     free_map();
-    FILE *file = fopen("example.txt", "w");
+    FILE *file = fopen("first_floor.txt", "w");
     if (!file) {
         perror("Error opening file for writing");
         return;
@@ -103,7 +103,7 @@ void draw_map_to_terminal() {
 
 void free_map() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("example.txt", "w");
+    FILE *file = fopen("first_floor.txt", "w");
     if (file == NULL) {
         perror("Error opening file");
         return;

@@ -48,7 +48,7 @@ void create_input_box(int y, int x, const char *prompt, char *input) {
 }
 
 void second_menu(char *username) {
-    const char *entry_type[] = {"new_game", "previous_game", "scores_table", "settings", "my_profile"};
+    const char *entry_type[] = {"new_game", "previous_game_sf", "scores_table", "settings", "my_profile"};
     int choice = 0;
     while (1) {
         move(LINES / 2 - 1, COLS / 2 - 1);
@@ -74,10 +74,10 @@ void second_menu(char *username) {
     clear();
     switch (choice) {
         case 0:
-            new_game();
+            first_floor();
             break;
         case 1:
-            previous_game();
+            previous_game_sf();
             break;
         case 2:
             scores_table_func(username, 0);
@@ -156,7 +156,7 @@ void scores_table_func(char *username, int start) {
         attroff(COLOR_PAIR(1));
         attroff(COLOR_PAIR(2));
         attroff(COLOR_PAIR(3));
-//        mvprintw(y + 5 + 6 * i - 1, x + 2, "Time difference: %d days, %d hours, %d minutes, %d seconds",
+//        mvprintw(y_sf + 5 + 6 * i - 1, x_sf + 2, "Time difference: %d days, %d hours, %d minutes, %d seconds",
 //                 days, hours, minutes, seconds);
     }
     char ch = getch();
