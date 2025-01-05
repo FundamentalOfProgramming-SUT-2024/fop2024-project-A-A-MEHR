@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h> // For usleep
-#include "game.c"
+#include "3_floor.c"
 #include <locale.h>
 
 typedef struct {
@@ -483,7 +483,7 @@ int second_floor() {
         }
         if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '<')) {
             stop_thread_sf = true;
-            second_floor();
+            third_floor();
         }
         if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '@')) {
             int pos = get_part_sf(y_sf, x_sf);
