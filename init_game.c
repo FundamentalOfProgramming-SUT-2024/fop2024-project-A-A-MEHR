@@ -579,6 +579,7 @@ int first_floor(char *username, int new) {
 //        refresh();
     }
     update_game_in_database(username, 1);
+    exit(1);
     // save_map_to_file(y_ff,x_ff);
 
     endwin();
@@ -587,7 +588,7 @@ int first_floor(char *username, int new) {
 
 void previous_game_ff(char *username) {
     int floor = get_last_game_floor(username);
- //   insert_new_game(username);
+    //   insert_new_game(username);
 
 //    first_floor(username, 0);
 

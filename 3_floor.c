@@ -581,6 +581,7 @@ int third_floor(char *username, int new) {
 //        refresh();
     }
     update_game_in_database(username, 3);
+    exit(1);
     // save_map_to_file(y_tf,x_tf);
 
     endwin();
