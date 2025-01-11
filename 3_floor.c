@@ -305,7 +305,7 @@ void draw_border_tf() {
 }
 
 int third_floor(char *username, int new) {
-
+    int color_pair;
     int ch;
     // Cursor starting position
     srand(time(NULL));
@@ -317,7 +317,7 @@ int third_floor(char *username, int new) {
     cbreak();
     resize_term(37, 162);
     keypad(stdscr, TRUE);
-    curs_set(1);
+    curs_set(0);
     if (has_colors()) {
         start_color();
         init_pair(1, COLOR_BLUE, COLOR_BLACK);
@@ -325,7 +325,18 @@ int third_floor(char *username, int new) {
         init_pair(3, COLOR_GREEN, COLOR_BLACK);
         init_pair(4, COLOR_YELLOW, COLOR_BLACK);
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
+        init_pair(8, COLOR_WHITE, COLOR_RED);
+        init_pair(9, COLOR_WHITE, COLOR_BLUE);
+        mvprintw(0, 0, "Choose a color for your hero:\n");
+        mvprintw(1, 0, "1. Red background\n");
+        mvprintw(2, 0, "2. Blue background\n");
+        mvprintw(3, 0, "Press 1 or 2 to select.");
+        refresh();
 
+        int ch = getch();
+        color_pair = (ch == '1') ? 8 : 9;
+
+        clear();
     }
     FILE *file = fopen(str3, "r");
     if (!file) {
@@ -341,7 +352,11 @@ int third_floor(char *username, int new) {
     refresh();
     load_map_from_file_tf(username);
     draw_map_to_terminal_tf();
+    attron(COLOR_PAIR(color_pair));
     move(y_tf, x_tf);
+    char s = mvinch(y_tf, x_tf);
+    mvaddch(y_tf, x_tf, s);
+    attroff(COLOR_PAIR(color_pair));
     pthread_t thread_id;
     pthread_create(&thread_id, NULL, change_able_pass_tf, NULL);
     while ((ch = getch()) != 'q') {
@@ -495,7 +510,19 @@ int third_floor(char *username, int new) {
         if (y_tf >= 35) y_tf = 35;
         if (y_tf < 2) y_tf = 2;
         if (x_tf >= 161) x_tf = 161;
+        chtype ch = mvinch(y_tf, x_tf);
+        chtype attributes = ch & A_ATTRIBUTES;
+        int color_pair_s = PAIR_NUMBER(attributes);
+        if (color_pair_s == 7) {
+            stop_thread_tf = false;
+            pthread_t thread_id;
+            pthread_create(&thread_id, NULL, draw_health_bar_tf, NULL);
+        }
+        attron(COLOR_PAIR(color_pair));
         move(y_tf, x_tf);
+        char s = mvinch(y_tf, x_tf);
+        mvaddch(y_tf, x_tf, s);
+        attroff(COLOR_PAIR(color_pair));
         if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '&')) {
             generate_pass_key_tf(y_tf, x_tf);
         }
@@ -509,14 +536,6 @@ int third_floor(char *username, int new) {
             attron(COLOR_PAIR(3));
             mvaddch(y_tf, x_tf, '@');
             attroff(COLOR_PAIR(3));
-        }
-        chtype ch = mvinch(y_tf, x_tf);
-        chtype attributes = ch & A_ATTRIBUTES;
-        int color_pair = PAIR_NUMBER(attributes);
-        if (color_pair == 7) {
-            stop_thread_tf = false;
-            pthread_t thread_id;
-            pthread_create(&thread_id, NULL, draw_health_bar_tf, NULL);
         }
         if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '#')) {
             stop_thread_tf = true;
@@ -575,7 +594,11 @@ int third_floor(char *username, int new) {
             }
         }
 
+        attron(COLOR_PAIR(color_pair));
         move(y_tf, x_tf);
+        char s1 = mvinch(y_tf, x_tf);
+        mvaddch(y_tf, x_tf, s1);
+        attroff(COLOR_PAIR(color_pair));
 //        getch();
 //        mvaddch(10,3,'T');
 //        refresh();
@@ -1121,6 +1144,12 @@ void *draw_health_bar_tf() {
 
         // Display the current health_tf value below the bar
         mvprintw(1, 2, "Current Health: %d%%", health_tf);
+        if(health_tf==0){
+            clear();
+            refresh();
+            mvprintw(1, 2, "Health finished , you died!");
+            exit(1);
+        }
         move(y_tf, x_tf);
         refresh();
         sleep(1);

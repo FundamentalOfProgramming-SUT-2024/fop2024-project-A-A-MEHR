@@ -8,7 +8,7 @@ int calc_gold(char g_char) {
         my_game.gold += 3;
         return 3;
     } else if (g_char == '$') {
-        my_game.gold += 10;
+        my_game.black_gold += 10;
         return 10;
     }
 }
@@ -156,4 +156,5 @@ void eat_food() {
 
 void update_game_in_database(char *username, int floor) {
     update_game(my_game, username, floor);
+    update_user_total_score(my_game,username);
 }

@@ -6,8 +6,11 @@
 #include "wchar.h"
 #include "locale.h"
 #include "init_game.c"
+#include <stdbool.h>
 
 void *play_music();
+
+volatile bool is_paused = false; // Tracks whether the music is paused
 
 #define MAX_AUDIO_SIZE 1048576 // Maximum audio size (1 MB for example)
 typedef struct {
@@ -77,7 +80,7 @@ void second_menu(char *username) {
     switch (choice) {
         case 0:
             insert_new_game(username);
-            first_floor(username,1);
+            first_floor(username, 1);
             break;
         case 1:
             previous_game_ff(username);
@@ -148,12 +151,12 @@ void scores_table_func(char *username, int start) {
             init_pair(3, COLOR_YELLOW, COLOR_BLACK);
             attron(COLOR_PAIR(3));
         }
-        mvprintw(y + 0 + 6 * j - 1, x + 2, "Rank:%d", i + 1);
-        mvprintw(y + 1 + 6 * j - 1, x + 2, "username : %s", (dtos + i)->username);
-        mvprintw(y + 2 + 6 * j - 1, x + 2, "play_count : %d", (dtos + i)->pla_count);
-        mvprintw(y + 3 + 6 * j - 1, x + 2, "Golds : %d", (dtos + i)->gold);
-        mvprintw(y + 4 + 6 * j - 1, x + 2, "total_score : %d", (dtos + i)->score);
-        mvprintw(y + 4 + 6 * j - 1, x + 2, "total_score : %s", (dtos + i)->earliest_game_time);
+        mvprintw(y + 0 + 7 * j - 1, x + 2, "Rank:%d", i + 1);
+        mvprintw(y + 1 + 7 * j - 1, x + 2, "username : %s", (dtos + i)->username);
+        mvprintw(y + 2 + 7 * j - 1, x + 2, "play_count : %d", (dtos + i)->pla_count);
+        mvprintw(y + 3 + 7 * j - 1, x + 2, "Golds : %d", (dtos + i)->gold);
+        mvprintw(y + 4 + 7 * j - 1, x + 2, "total_score : %d", (dtos + i)->score);
+        mvprintw(y + 5 + 7 * j - 1, x + 2, "play_experience : %s", (dtos + i)->earliest_game_time);
         refresh();
         attroff(A_BOLD);
         attroff(COLOR_PAIR(1));
@@ -169,22 +172,6 @@ void scores_table_func(char *username, int start) {
     }
 }
 
-void setings() {
-    char hard_ness[10];
-    char hero_color[10];
-
-    load_audio("audio_file.wav", &settings);
-    settings.hard_ness = atoi(hard_ness);
-    settings.hero_color_pair = atoi(hero_color);
-    if (settings.audio) {
-        printw("Audio is loaded and ready to use.\n");
-    }
-    pthread_t thread_id;
-    pthread_create(&thread_id, NULL, play_music, NULL);
-    create_input_box(LINES / 2 - 1, COLS / 2 - 1, "hard_ness{1,2,3}", hard_ness);
-    create_input_box(LINES / 2 + 2, COLS / 2 - 1, "hero_color{1,2,3}", hero_color);
-}
-
 void my_profile(char *username) {
     dto *dto = get_user_with_username(username);
     move(LINES / 2 - 1, COLS / 2 - 1);
@@ -196,6 +183,50 @@ void my_profile(char *username) {
     mvprintw(y + 2 - 1, x, "Golds : %d", dto->gold);
     mvprintw(y + 3 - 1, x, "total_score : %d", dto->score);
 }
+
+void setings() {
+    char hard_ness[10];
+    char hero_color[10];
+    char song_choice[10];
+
+    // Ask the user to choose between two songs
+    create_input_box(LINES / 2 - 3, COLS / 2 - 1, "Choose song (1 or 2):", song_choice);
+
+    int song_number = atoi(song_choice);
+    if (song_number != 1 && song_number != 2) {
+        printw("Invalid choice! Defaulting to song 1.\n");
+        song_number = 1;
+    }
+
+    // Determine the song to play based on user input
+    const char *song_file = (song_number == 1) ? "God_of_War.wav" : "audio_file.wav";
+
+    load_audio(song_file, &settings);
+    if (settings.audio) {
+        printw("Audio is loaded and ready to use: %s\n", song_file);
+    }
+
+    pthread_t thread_id;
+    pthread_create(&thread_id, NULL, play_music, (void *) song_file);
+
+    // Listen for user input to pause/resume
+    while (1) {
+        int ch = getch();
+        if (ch == 'p') {
+            is_paused = true;
+            printw("Music paused.\n");
+        } else if (ch == 'r') {
+            is_paused = false;
+            printw("Music resumed.\n");
+        } else if (ch == 'q') {
+            break; // Quit the settings menu
+        }
+    }
+
+    // Wait for the music thread to finish
+    pthread_join(thread_id, NULL);
+}
+
 
 void load_audio(const char *file_path, Settings *settings) {
     FILE *file = fopen(file_path, "rb");
@@ -221,14 +252,18 @@ void load_audio(const char *file_path, Settings *settings) {
     }
 
     fclose(file);
-    printf("Audio loaded, size: %zu bytes\n", settings->audio_size);
+    //  printf("Audio loaded, size: %zu bytes\n", settings->audio_size);
 
 }
 
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
-void *play_music() {
+#include <pthread.h>
+
+void *play_music(void *arg) {
+    const char *file_path = (const char *) arg;
+
     // Initialize SDL2
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         printf("SDL_Init Error: %s\n", SDL_GetError());
@@ -240,7 +275,7 @@ void *play_music() {
     Uint8 *wav_buffer;
     Uint32 wav_length;
 
-    if (SDL_LoadWAV("audio_file.wav", &wav_spec, &wav_buffer, &wav_length) == NULL) {
+    if (SDL_LoadWAV(file_path, &wav_spec, &wav_buffer, &wav_length) == NULL) {
         printf("SDL_LoadWAV Error: %s\n", SDL_GetError());
         SDL_Quit();
         return NULL;
@@ -254,17 +289,26 @@ void *play_music() {
         return NULL;
     }
 
-    // Play the WAV file
-    SDL_PauseAudio(0); // Start playing the audio
-    SDL_QueueAudio(1, wav_buffer, wav_length);  // Queue the WAV file into the audio buffer
+    // Queue and play the WAV file
+    SDL_QueueAudio(1, wav_buffer, wav_length);
+    SDL_PauseAudio(0); // Start playback
 
-    // Wait for the audio to finish playing
-    SDL_Delay(30000); // Wait for 3 seconds (you can adjust this as needed)
+    // Monitor the pause/resume state
+    while (SDL_GetQueuedAudioSize(1) > 0) { // While audio is still playing
+        if (is_paused) {
+            SDL_PauseAudio(1); // Pause playback
+        } else {
+            SDL_PauseAudio(0); // Resume playback
+        }
+        SDL_Delay(100); // Check the state periodically
+    }
 
     // Clean up
-    SDL_FreeWAV(wav_buffer); // Free the loaded WAV data
-    SDL_CloseAudio();        // Close the audio device
-    SDL_Quit();              // Quit SDL
+    SDL_FreeWAV(wav_buffer);
+    SDL_CloseAudio();
+    SDL_Quit();
 
     return NULL;
 }
+
+

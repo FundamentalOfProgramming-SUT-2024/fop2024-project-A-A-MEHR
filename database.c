@@ -356,7 +356,7 @@ scores_table get_scores_table() {
     return result;
 }
 
-void update_game(Game my_game, char *username,int floor) {
+void update_game(Game my_game, char *username, int floor) {
 
     const char *find_user_query = "SELECT id FROM users WHERE username = $1";
     const char *params1[1] = {username};
@@ -408,10 +408,10 @@ void update_game(Game my_game, char *username,int floor) {
             "Mace = Mace + $5, Dagger = Dagger + $6, Magic_Wand = Magic_Wand + $7, Normal_Arrow = Normal_Arrow + $8, "
             "Sword = Sword + $9, Health_j = Health_j + $10, Speed = Speed + $11, Damage = Damage + $12, "
             "Normal_Food = Normal_Food + $13, Magic_Food = Magic_Food + $14, Best_Food = Best_Food + $15, "
-            "Corrupted_Food = Corrupted_Food + $16,floor = $17 WHERE game_id = $18";
+            "Corrupted_Food = Corrupted_Food + $16,floor = $17,score = score + $18 WHERE game_id = $19";
 
-    const char *params3[18];
-    char buffer[17][12];
+    const char *params3[19];
+    char buffer[18][12];
     snprintf(buffer[0], sizeof(buffer[0]), "%d", my_game.health);
     snprintf(buffer[1], sizeof(buffer[1]), "%d", my_game.hunger);
     snprintf(buffer[2], sizeof(buffer[2]), "%d", my_game.gold);
@@ -429,13 +429,14 @@ void update_game(Game my_game, char *username,int floor) {
     snprintf(buffer[14], sizeof(buffer[14]), "%d", my_game.Best_Food);
     snprintf(buffer[15], sizeof(buffer[15]), "%d", my_game.Corrupted_Food);
     snprintf(buffer[16], sizeof(buffer[16]), "%d", floor);
-    params3[17] = game_id;
+    snprintf(buffer[17], sizeof(buffer[17]), "%d", my_game.gold + my_game.black_gold);
+    params3[18] = game_id;
 
-    for (int i = 0; i < 17; i++) {
+    for (int i = 0; i < 18; i++) {
         params3[i] = buffer[i];
     }
 
-    PGresult *update_res = PQexecParams(conn, update_query, 18, NULL, params3, NULL, NULL, 0);
+    PGresult *update_res = PQexecParams(conn, update_query, 19, NULL, params3, NULL, NULL, 0);
 
     if (PQresultStatus(update_res) != PGRES_COMMAND_OK) {
         fprintf(stderr, "Error updating game: %s\n", PQerrorMessage(conn));
@@ -444,7 +445,7 @@ void update_game(Game my_game, char *username,int floor) {
     }
 
     PQclear(update_res);
-    PQfinish(conn);
+    //  PQfinish(conn);
 }
 
 int get_last_game_floor(const char *username) {
@@ -452,7 +453,7 @@ int get_last_game_floor(const char *username) {
 
     // Step 1: Retrieve user ID for the username
     const char *find_user_query = "SELECT id FROM users WHERE username = $1";
-    const char *params1[1] = { username };
+    const char *params1[1] = {username};
     PGresult *res = PQexecParams(conn, find_user_query, 1, NULL, params1, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
@@ -474,7 +475,7 @@ int get_last_game_floor(const char *username) {
 
     // Step 2: Retrieve the floor of the most recent game for the user
     const char *find_game_query = "SELECT floor FROM game WHERE user_id = $1 ORDER BY start_time DESC LIMIT 1";
-    const char *params2[1] = { user_id };
+    const char *params2[1] = {user_id};
     PGresult *game_res = PQexecParams(conn, find_game_query, 1, NULL, params2, NULL, NULL, 0);
 
     if (PQresultStatus(game_res) != PGRES_TUPLES_OK) {
@@ -496,6 +497,44 @@ int get_last_game_floor(const char *username) {
 //    PQfinish(conn);
 
     return floor; // Return the floor
+}
+
+void update_user_total_score( Game my_game, const char *username) {
+    // Step 1: Find user ID
+    const char *find_user_query = "SELECT id FROM users WHERE username = $1";
+    const char *params1[1] = {username};
+    PGresult *res = PQexecParams(conn, find_user_query, 1, NULL, params1, NULL, NULL, 0);
+
+    if (!res || PQresultStatus(res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Error finding user: %s\n", PQerrorMessage(conn));
+        if (res) PQclear(res);
+        return;
+    }
+
+    if (PQntuples(res) == 0) {
+        fprintf(stderr, "Error: User not found\n");
+        PQclear(res);
+        return;
+    }
+
+    char *user_id = PQgetvalue(res, 0, 0); // Get user ID
+    PQclear(res);
+
+    // Step 2: Update total score
+    const char *update_query = "UPDATE users SET total_score = total_score + $1 WHERE id = $2";
+    char score_buffer[20];
+    snprintf(score_buffer, sizeof(score_buffer), "%d", my_game.gold + my_game.black_gold);
+    const char *params[2] = {score_buffer, user_id};
+
+    PGresult *update_res = PQexecParams(conn, update_query, 2, NULL, params, NULL, NULL, 0);
+
+    if (!update_res || PQresultStatus(update_res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Error updating total score: %s\n", PQerrorMessage(conn));
+    } else {
+        printf("User's total score updated successfully!\n");
+    }
+
+    if (update_res) PQclear(update_res);
 }
 
 
