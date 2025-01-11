@@ -11,6 +11,7 @@
 #include "game.c"
 #include <locale.h>
 
+char str4[50] = "4";
 typedef struct {
     int y;
     int x;
@@ -85,13 +86,22 @@ void move_to_second_line_lf(FILE *file) {
     }
 }
 
-void load_map_from_file_lf() {
-    FILE *file = fopen("last_floor.txt", "r");
+void load_map_from_file_lf(char *filename) {
+    FILE *file = fopen(str4, "r");
+    if (!file) {
+        FILE *file = fopen(str4, "w");
+        fclose(file);
+        file = fopen(str4, "r");
+        if (!file) {
+            perror("Error opening file after creation");
+            return;
+        }
+    }
     move_to_second_line_lf(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
         perror("Error opening file");
-        // Initialize map_lf with default values if file doesn't exist
+        // Initialize map_ff with default values if file doesn't exist
         for (int i = 0; i < MAP_ROWS_lf; i++) {
             memset(map_lf[i], '.', MAP_COLS_lf);
             map_lf[i][MAP_COLS_lf].symbol = '\0';
@@ -231,7 +241,7 @@ void draw_map_to_terminal_lf() {
 
 void free_map_lf() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("last_floor.txt", "w");
+    FILE *file = fopen(str4, "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -306,7 +316,7 @@ void draw_border_lf() {
 
 }
 
-int last_floor() {
+int last_floor(char *username, int new) {
 
     int ch;
     // Cursor starting position
@@ -329,12 +339,19 @@ int last_floor() {
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
 
     }
-    draw_border_lf();
-    get_parts_lf(rands_lf);
-    draw_room_lf();
+    FILE *file = fopen(str4, "r");
+    if (!file) {
+        strcat(str4, username);
+        strcat(str4, ".txt");
+    }
+    if (new) {
+        draw_border_lf();
+        get_parts_lf(rands_lf);
+        draw_room_lf();
+    }
     clear();
     refresh();
-    load_map_from_file_lf();
+    load_map_from_file_lf(username);
     draw_map_to_terminal_lf();
     move(y_lf, x_lf);
     pthread_t thread_id;
@@ -385,19 +402,19 @@ int last_floor() {
             case 'e':
                 clear();
                 eat_food();
-                load_map_from_file_lf();
+                load_map_from_file_lf(username);
                 draw_map_to_terminal_lf();
                 break;
             case 'j':
                 clear();
                 display_spell();
-                load_map_from_file_lf();
+                load_map_from_file_lf(username);
                 draw_map_to_terminal_lf();
                 break;
             case 'i':
                 clear();
                 display_guns();
-                load_map_from_file_lf();
+                load_map_from_file_lf(username);
                 draw_map_to_terminal_lf();
                 break;
             case 'v':
@@ -519,7 +536,7 @@ int last_floor() {
             mvaddch(y_lf, x_lf, '.');
             mvprintw(1, 2, "you achived %d golds", achived_gold);
             getch();
-            load_map_from_file_lf();
+            load_map_from_file_lf(username);
             draw_map_to_terminal_lf();
             refresh();
         }
@@ -531,7 +548,7 @@ int last_floor() {
                 calc_gun(mvinch(y_lf, x_lf) & A_CHARTEXT);
                 add_file_lf(y_lf, x_lf, '.');
                 mvaddch(y_lf, x_lf, '.');
-                load_map_from_file_lf();
+                load_map_from_file_lf(username);
                 draw_map_to_terminal_lf();
             }
         }
@@ -542,7 +559,7 @@ int last_floor() {
                 calc_spell(mvinch(y_lf, x_lf) & A_CHARTEXT);
                 add_file_lf(y_lf, x_lf, '.');
                 mvaddch(y_lf, x_lf, '.');
-                load_map_from_file_lf();
+                load_map_from_file_lf(username);
                 draw_map_to_terminal_lf();
             }
         }
@@ -554,12 +571,12 @@ int last_floor() {
                 if (food_res) {
                     add_file_lf(y_lf, x_lf, '.');
                     mvaddch(y_lf, x_lf, '.');
-                    load_map_from_file_lf();
+                    load_map_from_file_lf(username);
                     draw_map_to_terminal_lf();
                 } else {
                     mvprintw(1, 2, "you already have maximum(5) food");
                     getch();
-                    load_map_from_file_lf();
+                    load_map_from_file_lf(username);
                     draw_map_to_terminal_lf();
                     refresh();
                 }
@@ -571,60 +588,13 @@ int last_floor() {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
+    update_game_in_database(username, 4);
 
     // save_map_to_file(y_lf,x_lf);
 
     endwin();
     return 0;
 }
-
-void previous_game_lf() {
-    int ch;// Cursor starting position
-    srand(time(NULL));
-    initscr();
-    noecho();
-    cbreak();
-    resize_term(37, 162);
-    keypad(stdscr, TRUE);
-    curs_set(1);
-    load_map_from_file_lf();
-
-    draw_map_to_terminal_lf();
-    move(y_lf, x_lf);
-
-    while ((ch = getch()) != 'q') { // Press 'q' to quit
-        switch (ch) {
-            case KEY_UP:
-                if (y_lf > 0) y_lf--;
-                break;
-            case KEY_DOWN:
-                if (y_lf < MAP_ROWS_lf - 1) y_lf++;
-                break;
-            case KEY_LEFT:
-                if (x_lf > 0) x_lf--;
-                break;
-            case KEY_RIGHT:
-                if (x_lf < MAP_COLS_lf - 1) x_lf++;
-                break;
-            case ' ':
-                map_lf[y_lf][x_lf].symbol = (map_lf[y_lf][x_lf].symbol == '.') ? '#' : '.';
-                break;
-        }
-
-        draw_map_to_terminal_lf();
-        if (x_lf < 3) x_lf = 3;
-        if (y_lf >= 34) y_lf = 34;
-        if (y_lf < 3) y_lf = 3;
-        if (x_lf >= 158) x_lf = 158;
-        move(y_lf, x_lf);
-    }
-
-    //save_map_to_file(y_lf,x_lf);
-
-    endwin();
-    return;
-}
-
 
 void get_parts_lf(int *rands) {
     int count = 0;
@@ -1019,7 +989,7 @@ void put_corridor_lf(int start_row, int start_col) {
 int add_file_lf(int row, int col, char character) {
     FILE *file;
 
-    file = fopen("last_floor.txt", "r+");
+    file = fopen(str4, "r+");
     if (file == NULL) {
         perror("Error opening file");
         return 1;

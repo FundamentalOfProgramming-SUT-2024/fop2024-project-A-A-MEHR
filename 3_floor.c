@@ -10,6 +10,8 @@
 #include <unistd.h> // For usleep
 #include <locale.h>
 #include "4_floor.c"
+
+char str3[50] = "3";
 typedef struct {
     int y;
     int x;
@@ -83,13 +85,22 @@ void move_to_second_line_tf(FILE *file) {
     }
 }
 
-void load_map_from_file_tf() {
-    FILE *file = fopen("second_floor.txt", "r");
+void load_map_from_file_tf(char *filename) {
+    FILE *file = fopen(str3, "r");
+    if (!file) {
+        FILE *file = fopen(str3, "w");
+        fclose(file);
+        file = fopen(str3, "r");
+        if (!file) {
+            perror("Error opening file after creation");
+            return;
+        }
+    }
     move_to_second_line_tf(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
         perror("Error opening file");
-        // Initialize map_tf with default values if file doesn't exist
+        // Initialize map_ff with default values if file doesn't exist
         for (int i = 0; i < MAP_ROWS_tf; i++) {
             memset(map_tf[i], '.', MAP_COLS_tf);
             map_tf[i][MAP_COLS_tf].symbol = '\0';
@@ -116,6 +127,7 @@ void load_map_from_file_tf() {
     }
 
     fclose(file);
+
 }
 
 
@@ -217,7 +229,7 @@ void draw_map_to_terminal_tf() {
 
 void free_map_tf() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("second_floor.txt", "w");
+    FILE *file = fopen(str3, "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -292,7 +304,7 @@ void draw_border_tf() {
 
 }
 
-int third_floor() {
+int third_floor(char *username, int new) {
 
     int ch;
     // Cursor starting position
@@ -315,12 +327,19 @@ int third_floor() {
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
 
     }
-    draw_border_tf();
-    get_parts_tf(rands_tf);
-    draw_room_tf();
+    FILE *file = fopen(str3, "r");
+    if (!file) {
+        strcat(str3, username);
+        strcat(str3, ".txt");
+    }
+    if (new) {
+        draw_border_tf();
+        get_parts_tf(rands_tf);
+        draw_room_tf();
+    }
     clear();
     refresh();
-    load_map_from_file_tf();
+    load_map_from_file_tf(username);
     draw_map_to_terminal_tf();
     move(y_tf, x_tf);
     pthread_t thread_id;
@@ -371,19 +390,19 @@ int third_floor() {
             case 'e':
                 clear();
                 eat_food();
-                load_map_from_file_tf();
+                load_map_from_file_tf(username);
                 draw_map_to_terminal_tf();
                 break;
             case 'j':
                 clear();
                 display_spell();
-                load_map_from_file_tf();
+                load_map_from_file_tf(username);
                 draw_map_to_terminal_tf();
                 break;
             case 'i':
                 clear();
                 display_guns();
-                load_map_from_file_tf();
+                load_map_from_file_tf(username);
                 draw_map_to_terminal_tf();
                 break;
             case 'v':
@@ -482,7 +501,7 @@ int third_floor() {
         }
         if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '<')) {
             stop_thread_tf = true;
-            last_floor();
+            last_floor(username, 1);
         }
         if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '@')) {
             int pos = get_part_tf(y_tf, x_tf);
@@ -509,7 +528,7 @@ int third_floor() {
             mvaddch(y_tf, x_tf, '.');
             mvprintw(1, 2, "you achived %d golds", achived_gold);
             getch();
-            load_map_from_file_tf();
+            load_map_from_file_tf(username);
             draw_map_to_terminal_tf();
             refresh();
         }
@@ -521,7 +540,7 @@ int third_floor() {
                 calc_gun(mvinch(y_tf, x_tf) & A_CHARTEXT);
                 add_file_tf(y_tf, x_tf, '.');
                 mvaddch(y_tf, x_tf, '.');
-                load_map_from_file_tf();
+                load_map_from_file_tf(username);
                 draw_map_to_terminal_tf();
             }
         }
@@ -532,7 +551,7 @@ int third_floor() {
                 calc_spell(mvinch(y_tf, x_tf) & A_CHARTEXT);
                 add_file_tf(y_tf, x_tf, '.');
                 mvaddch(y_tf, x_tf, '.');
-                load_map_from_file_tf();
+                load_map_from_file_tf(username);
                 draw_map_to_terminal_tf();
             }
         }
@@ -544,12 +563,12 @@ int third_floor() {
                 if (food_res) {
                     add_file_tf(y_tf, x_tf, '.');
                     mvaddch(y_tf, x_tf, '.');
-                    load_map_from_file_tf();
+                    load_map_from_file_tf(username);
                     draw_map_to_terminal_tf();
                 } else {
                     mvprintw(1, 2, "you already have maximum(5) food");
                     getch();
-                    load_map_from_file_tf();
+                    load_map_from_file_tf(username);
                     draw_map_to_terminal_tf();
                     refresh();
                 }
@@ -561,60 +580,12 @@ int third_floor() {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
-
+    update_game_in_database(username, 3);
     // save_map_to_file(y_tf,x_tf);
 
     endwin();
     return 0;
 }
-
-void previous_game_tf() {
-    int ch;// Cursor starting position
-    srand(time(NULL));
-    initscr();
-    noecho();
-    cbreak();
-    resize_term(37, 162);
-    keypad(stdscr, TRUE);
-    curs_set(1);
-    load_map_from_file_tf();
-
-    draw_map_to_terminal_tf();
-    move(y_tf, x_tf);
-
-    while ((ch = getch()) != 'q') { // Press 'q' to quit
-        switch (ch) {
-            case KEY_UP:
-                if (y_tf > 0) y_tf--;
-                break;
-            case KEY_DOWN:
-                if (y_tf < MAP_ROWS_tf - 1) y_tf++;
-                break;
-            case KEY_LEFT:
-                if (x_tf > 0) x_tf--;
-                break;
-            case KEY_RIGHT:
-                if (x_tf < MAP_COLS_tf - 1) x_tf++;
-                break;
-            case ' ':
-                map_tf[y_tf][x_tf].symbol = (map_tf[y_tf][x_tf].symbol == '.') ? '#' : '.';
-                break;
-        }
-
-        draw_map_to_terminal_tf();
-        if (x_tf < 3) x_tf = 3;
-        if (y_tf >= 34) y_tf = 34;
-        if (y_tf < 3) y_tf = 3;
-        if (x_tf >= 158) x_tf = 158;
-        move(y_tf, x_tf);
-    }
-
-    //save_map_to_file(y_tf,x_tf);
-
-    endwin();
-    return;
-}
-
 
 void get_parts_tf(int *rands) {
     int count = 0;
@@ -982,7 +953,7 @@ void put_corridor_tf(int start_row, int start_col) {
 int add_file_tf(int row, int col, char character) {
     FILE *file;
 
-    file = fopen("second_floor.txt", "r+");
+    file = fopen(str3, "r+");
     if (file == NULL) {
         perror("Error opening file");
         return 1;

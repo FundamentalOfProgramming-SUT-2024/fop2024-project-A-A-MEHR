@@ -11,6 +11,7 @@
 #include "3_floor.c"
 #include <locale.h>
 
+char str2[50] = "2";
 typedef struct {
     int y;
     int x;
@@ -84,13 +85,22 @@ void move_to_second_line_sf(FILE *file) {
     }
 }
 
-void load_map_from_file_sf() {
-    FILE *file = fopen("second_floor.txt", "r");
+void load_map_from_file_sf(char *filename) {
+    FILE *file = fopen(str2, "r");
+    if (!file) {
+        FILE *file = fopen(str2, "w");
+        fclose(file);
+        file = fopen(str2, "r");
+        if (!file) {
+            perror("Error opening file after creation");
+            return;
+        }
+    }
     move_to_second_line_sf(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
         perror("Error opening file");
-        // Initialize map_sf with default values if file doesn't exist
+        // Initialize map_ff with default values if file doesn't exist
         for (int i = 0; i < MAP_ROWS_sf; i++) {
             memset(map_sf[i], '.', MAP_COLS_sf);
             map_sf[i][MAP_COLS_sf].symbol = '\0';
@@ -218,7 +228,7 @@ void draw_map_to_terminal_sf() {
 
 void free_map_sf() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("second_floor.txt", "w");
+    FILE *file = fopen(str2, "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -293,7 +303,7 @@ void draw_border_sf() {
 
 }
 
-int second_floor() {
+int second_floor(char *username, int new) {
 
     int ch;
     // Cursor starting position
@@ -316,12 +326,20 @@ int second_floor() {
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
 
     }
-    draw_border_sf();
-    get_parts_sf(rands_sf);
-    draw_room_sf();
+    FILE *file = fopen(str2, "r");
+    if (!file) {
+        strcat(str2, username);
+        strcat(str2, ".txt");
+    }
+
+    if (new) {
+        draw_border_sf();
+        get_parts_sf(rands_sf);
+        draw_room_sf();
+    }
     clear();
     refresh();
-    load_map_from_file_sf();
+    load_map_from_file_sf(username);
     draw_map_to_terminal_sf();
     move(y_sf, x_sf);
     pthread_t thread_id;
@@ -372,19 +390,19 @@ int second_floor() {
             case 'e':
                 clear();
                 eat_food();
-                load_map_from_file_sf();
+                load_map_from_file_sf(username);
                 draw_map_to_terminal_sf();
                 break;
             case 'j':
                 clear();
                 display_spell();
-                load_map_from_file_sf();
+                load_map_from_file_sf(username);
                 draw_map_to_terminal_sf();
                 break;
             case 'i':
                 clear();
                 display_guns();
-                load_map_from_file_sf();
+                load_map_from_file_sf(username);
                 draw_map_to_terminal_sf();
                 break;
             case 'v':
@@ -483,7 +501,7 @@ int second_floor() {
         }
         if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '<')) {
             stop_thread_sf = true;
-            third_floor();
+            third_floor(username, 1);
         }
         if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '@')) {
             int pos = get_part_sf(y_sf, x_sf);
@@ -510,7 +528,7 @@ int second_floor() {
             mvaddch(y_sf, x_sf, '.');
             mvprintw(1, 2, "you achived %d golds", achived_gold);
             getch();
-            load_map_from_file_sf();
+            load_map_from_file_sf(username);
             draw_map_to_terminal_sf();
             refresh();
         }
@@ -522,7 +540,7 @@ int second_floor() {
                 calc_gun(mvinch(y_sf, x_sf) & A_CHARTEXT);
                 add_file_sf(y_sf, x_sf, '.');
                 mvaddch(y_sf, x_sf, '.');
-                load_map_from_file_sf();
+                load_map_from_file_sf(username);
                 draw_map_to_terminal_sf();
             }
         }
@@ -533,7 +551,7 @@ int second_floor() {
                 calc_spell(mvinch(y_sf, x_sf) & A_CHARTEXT);
                 add_file_sf(y_sf, x_sf, '.');
                 mvaddch(y_sf, x_sf, '.');
-                load_map_from_file_sf();
+                load_map_from_file_sf(username);
                 draw_map_to_terminal_sf();
             }
         }
@@ -545,12 +563,12 @@ int second_floor() {
                 if (food_res) {
                     add_file_sf(y_sf, x_sf, '.');
                     mvaddch(y_sf, x_sf, '.');
-                    load_map_from_file_sf();
+                    load_map_from_file_sf(username);
                     draw_map_to_terminal_sf();
                 } else {
                     mvprintw(1, 2, "you already have maximum(5) food");
                     getch();
-                    load_map_from_file_sf();
+                    load_map_from_file_sf(username);
                     draw_map_to_terminal_sf();
                     refresh();
                 }
@@ -562,58 +580,12 @@ int second_floor() {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
+    update_game_in_database(username, 2);
 
     // save_map_to_file(y_sf,x_sf);
 
     endwin();
     return 0;
-}
-
-void previous_game_sf() {
-    int ch;// Cursor starting position
-    srand(time(NULL));
-    initscr();
-    noecho();
-    cbreak();
-    resize_term(37, 162);
-    keypad(stdscr, TRUE);
-    curs_set(1);
-    load_map_from_file_sf();
-
-    draw_map_to_terminal_sf();
-    move(y_sf, x_sf);
-
-    while ((ch = getch()) != 'q') { // Press 'q' to quit
-        switch (ch) {
-            case KEY_UP:
-                if (y_sf > 0) y_sf--;
-                break;
-            case KEY_DOWN:
-                if (y_sf < MAP_ROWS_sf - 1) y_sf++;
-                break;
-            case KEY_LEFT:
-                if (x_sf > 0) x_sf--;
-                break;
-            case KEY_RIGHT:
-                if (x_sf < MAP_COLS_sf - 1) x_sf++;
-                break;
-            case ' ':
-                map_sf[y_sf][x_sf].symbol = (map_sf[y_sf][x_sf].symbol == '.') ? '#' : '.';
-                break;
-        }
-
-        draw_map_to_terminal_sf();
-        if (x_sf < 3) x_sf = 3;
-        if (y_sf >= 34) y_sf = 34;
-        if (y_sf < 3) y_sf = 3;
-        if (x_sf >= 158) x_sf = 158;
-        move(y_sf, x_sf);
-    }
-
-    //save_map_to_file(y_sf,x_sf);
-
-    endwin();
-    return;
 }
 
 
@@ -983,7 +955,7 @@ void put_corridor_sf(int start_row, int start_col) {
 int add_file_sf(int row, int col, char character) {
     FILE *file;
 
-    file = fopen("second_floor.txt", "r+");
+    file = fopen(str2, "r+");
     if (file == NULL) {
         perror("Error opening file");
         return 1;

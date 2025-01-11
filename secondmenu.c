@@ -1,12 +1,14 @@
 #include <ncurses.h>
 #include <time.h>
-#include "database.c"
+//#include "database.c"
 #include <stdlib.h>
 #include <string.h>
 #include "wchar.h"
 #include "locale.h"
 #include "init_game.c"
-void* play_music();
+
+void *play_music();
+
 #define MAX_AUDIO_SIZE 1048576 // Maximum audio size (1 MB for example)
 typedef struct {
     int hard_ness;
@@ -74,10 +76,11 @@ void second_menu(char *username) {
     clear();
     switch (choice) {
         case 0:
-            first_floor();
+            insert_new_game(username);
+            first_floor(username,1);
             break;
         case 1:
-            previous_game_sf();
+            previous_game_ff(username);
             break;
         case 2:
             scores_table_func(username, 0);
@@ -177,7 +180,7 @@ void setings() {
         printw("Audio is loaded and ready to use.\n");
     }
     pthread_t thread_id;
-    pthread_create(&thread_id, NULL,  play_music, NULL);
+    pthread_create(&thread_id, NULL, play_music, NULL);
     create_input_box(LINES / 2 - 1, COLS / 2 - 1, "hard_ness{1,2,3}", hard_ness);
     create_input_box(LINES / 2 + 2, COLS / 2 - 1, "hero_color{1,2,3}", hero_color);
 }
@@ -225,7 +228,7 @@ void load_audio(const char *file_path, Settings *settings) {
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
-void* play_music() {
+void *play_music() {
     // Initialize SDL2
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         printf("SDL_Init Error: %s\n", SDL_GetError());

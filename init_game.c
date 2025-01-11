@@ -34,6 +34,7 @@ Cell_ff map_ff[MAP_ROWS_ff][MAP_COLS_ff];
 int key_pair_ff[9];
 int x_ff = 0, y_ff = 0;
 int show_health_bar_ff = 0;
+char str1[50] = "1";
 
 void get_parts_ff(int *rands);
 
@@ -84,8 +85,17 @@ void move_to_second_line_ff(FILE *file) {
     }
 }
 
-void load_map_from_file_ff() {
-    FILE *file = fopen("first_floor.txt", "r");
+void load_map_from_file_ff(char *filename) {
+    FILE *file = fopen(str1, "r");
+    if (!file) {
+        FILE *file = fopen(str1, "w");
+        fclose(file);
+        file = fopen(str1, "r");
+        if (!file) {
+            perror("Error opening file after creation");
+            return;
+        }
+    }
     move_to_second_line_ff(file);
     fseek(file, 2, SEEK_CUR);
     if (!file) {
@@ -118,6 +128,7 @@ void load_map_from_file_ff() {
 
     fclose(file);
 }
+
 
 void update_visibility_ff(int player_y, int player_x) {
     if ((map_ff[player_y - 2][player_x].symbol == '?' && !map_ff[player_y - 2][player_x].visible) ||
@@ -217,7 +228,7 @@ void draw_map_to_terminal_ff() {
 
 void free_map_ff() {
     // Open the file in write mode to truncate it
-    FILE *file = fopen("first_floor.txt", "w");
+    FILE *file = fopen(str1, "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -292,7 +303,7 @@ void draw_border_ff() {
 
 }
 
-int first_floor() {
+int first_floor(char *username, int new) {
 
     int ch;
     // Cursor starting position
@@ -314,12 +325,19 @@ int first_floor() {
         init_pair(7, COLOR_WHITE, COLOR_GREEN);
 
     }
-    draw_border_ff();
-    get_parts_ff(rands_ff);
-    draw_room_ff();
+    FILE *file = fopen(str1, "r");
+    if (!file) {
+        strcat(str1, username);
+        strcat(str1, ".txt");
+    }
+    if (new) {
+        draw_border_ff();
+        get_parts_ff(rands_ff);
+        draw_room_ff();
+    }
     clear();
     refresh();
-    load_map_from_file_ff();
+    load_map_from_file_ff(username);
     draw_map_to_terminal_ff();
     move(y_ff, x_ff);
     pthread_t thread_id;
@@ -370,19 +388,19 @@ int first_floor() {
             case 'e':
                 clear();
                 eat_food();
-                load_map_from_file_ff();
+                load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
                 break;
             case 'j':
                 clear();
                 display_spell();
-                load_map_from_file_ff();
+                load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
                 break;
             case 'i':
                 clear();
                 display_guns();
-                load_map_from_file_ff();
+                load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
                 break;
             case 'v':
@@ -481,7 +499,7 @@ int first_floor() {
         }
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '<')) {
             stop_thread_ff = true;
-            second_floor();
+            second_floor(username, 1);
         }
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '@')) {
             int pos = get_part_ff(y_ff, x_ff);
@@ -508,7 +526,7 @@ int first_floor() {
             mvaddch(y_ff, x_ff, '.');
             mvprintw(1, 2, "you achived %d golds", achived_gold);
             getch();
-            load_map_from_file_ff();
+            load_map_from_file_ff(username);
             draw_map_to_terminal_ff();
             refresh();
         }
@@ -520,7 +538,7 @@ int first_floor() {
                 calc_gun(mvinch(y_ff, x_ff) & A_CHARTEXT);
                 add_file_ff(y_ff, x_ff, '.');
                 mvaddch(y_ff, x_ff, '.');
-                load_map_from_file_ff();
+                load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
             }
         }
@@ -531,7 +549,7 @@ int first_floor() {
                 calc_spell(mvinch(y_ff, x_ff) & A_CHARTEXT);
                 add_file_ff(y_ff, x_ff, '.');
                 mvaddch(y_ff, x_ff, '.');
-                load_map_from_file_ff();
+                load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
             }
         }
@@ -543,12 +561,12 @@ int first_floor() {
                 if (food_res) {
                     add_file_ff(y_ff, x_ff, '.');
                     mvaddch(y_ff, x_ff, '.');
-                    load_map_from_file_ff();
+                    load_map_from_file_ff(username);
                     draw_map_to_terminal_ff();
                 } else {
                     mvprintw(1, 2, "you already have maximum(5) food");
                     getch();
-                    load_map_from_file_ff();
+                    load_map_from_file_ff(username);
                     draw_map_to_terminal_ff();
                     refresh();
                 }
@@ -560,58 +578,38 @@ int first_floor() {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
-
+    update_game_in_database(username, 1);
     // save_map_to_file(y_ff,x_ff);
 
     endwin();
     return 0;
 }
 
-void previous_game_ff() {
-    int ch;// Cursor starting position
-    srand(time(NULL));
-    initscr();
-    noecho();
-    cbreak();
-    resize_term(37, 162);
-    keypad(stdscr, TRUE);
-    curs_set(1);
-    load_map_from_file_ff();
+void previous_game_ff(char *username) {
+    int floor = get_last_game_floor(username);
+ //   insert_new_game(username);
 
-    draw_map_to_terminal_ff();
-    move(y_ff, x_ff);
+//    first_floor(username, 0);
 
-    while ((ch = getch()) != 'q') { // Press 'q' to quit
-        switch (ch) {
-            case KEY_UP:
-                if (y_ff > 0) y_ff--;
-                break;
-            case KEY_DOWN:
-                if (y_ff < MAP_ROWS_ff - 1) y_ff++;
-                break;
-            case KEY_LEFT:
-                if (x_ff > 0) x_ff--;
-                break;
-            case KEY_RIGHT:
-                if (x_ff < MAP_COLS_ff - 1) x_ff++;
-                break;
-            case ' ':
-                map_ff[y_ff][x_ff].symbol = (map_ff[y_ff][x_ff].symbol == '.') ? '#' : '.';
-                break;
-        }
-
-        draw_map_to_terminal_ff();
-        if (x_ff < 3) x_ff = 3;
-        if (y_ff >= 34) y_ff = 34;
-        if (y_ff < 3) y_ff = 3;
-        if (x_ff >= 158) x_ff = 158;
-        move(y_ff, x_ff);
+    switch (floor) {
+        case 1:
+            first_floor(username, 0);
+            break;
+        case 2:
+            second_floor(username, 0);
+            break;
+        case 3:
+            third_floor(username, 0);
+            break;
+        case 4:
+            last_floor(username, 0);
+            break;
+        default:
+            initscr();
+            clear();
+            mvprintw(1, 2, "You have not previous game!");
+            refresh();
     }
-
-    //save_map_to_file(y_ff,x_ff);
-
-    endwin();
-    return;
 }
 
 
@@ -981,7 +979,7 @@ void put_corridor_ff(int start_row, int start_col) {
 int add_file_ff(int row, int col, char character) {
     FILE *file;
 
-    file = fopen("first_floor.txt", "r+");
+    file = fopen(str1, "r+");
     if (file == NULL) {
         perror("Error opening file");
         return 1;

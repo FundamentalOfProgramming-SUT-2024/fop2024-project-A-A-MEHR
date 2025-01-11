@@ -4,12 +4,49 @@
 #include <stdlib.h>
 
 typedef struct {
+    int health;
+    int hunger;
+    int gold;
+    int black_gold;
+    int Mace;
+    int Dagger;
+    int Magic_Wand;
+    int Normal_Arrow;
+    int Sword;
+    int Health;
+    int Speed;
+    int Damage;
+    int Normal_Food;
+    int Magic_Food;
+    int Best_Food;
+    int Corrupted_Food;
+} Game;
+typedef struct {
     char username[100];
     char password[100];
     char email[100];
 } user;
+typedef struct {
+    char username[256];
+    char email[256];
+    int score;
+    int gold;
+} dto;
 
+typedef struct {
+    char username[256];
+    int pla_count;
+    int score;
+    int gold;
+    char earliest_game_time[20];
+} table_dto;
+
+typedef struct {
+    table_dto *users; // Pointer to the array of table_dto structures
+    int size;         // Number of elements in the array
+} scores_table;
 PGconn *conn = NULL; // Global connection object
+dto *get_user_with_username(const char *username);
 
 void check_db_error(PGconn *conn, PGresult *res) {
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -76,6 +113,57 @@ int save_user(user user) {
     return 0;
 }
 
+void insert_new_game(char *username) {
+    const char *find_user_query = "SELECT id FROM users WHERE username = $1";
+    PGresult *res = PQexecParams(conn, find_user_query,
+                                 1,       // Number of parameters
+                                 NULL,    // Parameter types (let libpq infer)
+                                 &username,  // Parameter values
+                                 NULL,    // Parameter lengths (not needed)
+                                 NULL,    // Binary or text parameters (text = NULL)
+                                 0);      // Text format
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Error finding user: %s\n", PQerrorMessage(conn));
+        PQclear(res);
+        return;
+    }
+
+    // Ensure user exists
+    if (PQntuples(res) == 0) {
+        fprintf(stderr, "Error: User not found\n");
+        PQclear(res);
+        return;
+    }
+
+    char *user_id = PQgetvalue(res, 0, 0); // Get the user's ID
+    PQclear(res);
+
+    // Step 2: Insert a new game for the user
+    const char *insert_game_query =
+            "INSERT INTO game (user_id, score, start_time) VALUES ($1, 0, CURRENT_TIMESTAMP)";
+
+
+    const char *params[1] = {user_id}; // User ID and score
+    PGresult *insert_res = PQexecParams(conn, insert_game_query,
+                                        1,       // Number of parameters
+                                        NULL,    // Parameter types
+                                        params,  // Parameter values
+                                        NULL,    // Parameter lengths
+                                        NULL,    // Binary or text parameters
+                                        0);      // Text format
+
+    if (PQresultStatus(insert_res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Error inserting game: %s\n", PQerrorMessage(conn));
+        PQclear(insert_res);
+        return;
+    }
+
+    printf("Game inserted successfully!\n");
+    PQclear(insert_res);
+}
+
+
 // Function to get user from the database by username
 int check_username_exists(user user1) {
     // SQL query to fetch a user by username
@@ -103,26 +191,6 @@ int check_username_exists(user user1) {
     }
     return 1;
 }
-
-typedef struct {
-    char username[256];
-    char email[256];
-    int score;
-    int gold;
-} dto;
-
-typedef struct {
-    char username[256];
-    int pla_count;
-    int score;
-    int gold;
-    char earliest_game_time[20];
-} table_dto;
-
-typedef struct {
-    table_dto *users; // Pointer to the array of table_dto structures
-    int size;         // Number of elements in the array
-} scores_table;
 
 // Function to get user by username excluding the password
 dto *get_user_with_username(const char *username) {
@@ -287,3 +355,147 @@ scores_table get_scores_table() {
 
     return result;
 }
+
+void update_game(Game my_game, char *username,int floor) {
+
+    const char *find_user_query = "SELECT id FROM users WHERE username = $1";
+    const char *params1[1] = {username};
+    PGresult *res = PQexecParams(conn, find_user_query, 1, NULL, params1, NULL, NULL, 0);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Error finding user: %s\n", PQerrorMessage(conn));
+        PQclear(res);
+        PQfinish(conn);
+        return;
+    }
+
+    if (PQntuples(res) == 0) {
+        fprintf(stderr, "Error: User not found\n");
+        PQclear(res);
+        PQfinish(conn);
+        return;
+    }
+
+    char *user_id = PQgetvalue(res, 0, 0);
+    PQclear(res);
+
+    // Step 2: Retrieve the most recent game ID for the user
+    const char *find_game_query = "SELECT game_id FROM game WHERE user_id = $1 ORDER BY start_time DESC LIMIT 1";
+    const char *params2[1] = {user_id};
+    PGresult *game_res = PQexecParams(conn, find_game_query, 1, NULL, params2, NULL, NULL, 0);
+
+    if (PQresultStatus(game_res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Error finding game: %s\n", PQerrorMessage(conn));
+        PQclear(game_res);
+        PQfinish(conn);
+        return;
+    }
+
+    if (PQntuples(game_res) == 0) {
+        fprintf(stderr, "Error: No game found for user\n");
+        PQclear(game_res);
+        PQfinish(conn);
+        return;
+    }
+
+    char *game_id = PQgetvalue(game_res, 0, 0);
+    PQclear(game_res);
+
+    // Step 3: Update the game with the values from the Game struct
+    const char *update_query =
+            "UPDATE game SET "
+            "health = health + $1, hunger = hunger + $2, gold = gold + $3, black_gold = black_gold + $4, "
+            "Mace = Mace + $5, Dagger = Dagger + $6, Magic_Wand = Magic_Wand + $7, Normal_Arrow = Normal_Arrow + $8, "
+            "Sword = Sword + $9, Health_j = Health_j + $10, Speed = Speed + $11, Damage = Damage + $12, "
+            "Normal_Food = Normal_Food + $13, Magic_Food = Magic_Food + $14, Best_Food = Best_Food + $15, "
+            "Corrupted_Food = Corrupted_Food + $16,floor = $17 WHERE game_id = $18";
+
+    const char *params3[18];
+    char buffer[17][12];
+    snprintf(buffer[0], sizeof(buffer[0]), "%d", my_game.health);
+    snprintf(buffer[1], sizeof(buffer[1]), "%d", my_game.hunger);
+    snprintf(buffer[2], sizeof(buffer[2]), "%d", my_game.gold);
+    snprintf(buffer[3], sizeof(buffer[3]), "%d", my_game.black_gold);
+    snprintf(buffer[4], sizeof(buffer[4]), "%d", my_game.Mace);
+    snprintf(buffer[5], sizeof(buffer[5]), "%d", my_game.Dagger);
+    snprintf(buffer[6], sizeof(buffer[6]), "%d", my_game.Magic_Wand);
+    snprintf(buffer[7], sizeof(buffer[7]), "%d", my_game.Normal_Arrow);
+    snprintf(buffer[8], sizeof(buffer[8]), "%d", my_game.Sword);
+    snprintf(buffer[9], sizeof(buffer[9]), "%d", my_game.Health);
+    snprintf(buffer[10], sizeof(buffer[10]), "%d", my_game.Speed);
+    snprintf(buffer[11], sizeof(buffer[11]), "%d", my_game.Damage);
+    snprintf(buffer[12], sizeof(buffer[12]), "%d", my_game.Normal_Food);
+    snprintf(buffer[13], sizeof(buffer[13]), "%d", my_game.Magic_Food);
+    snprintf(buffer[14], sizeof(buffer[14]), "%d", my_game.Best_Food);
+    snprintf(buffer[15], sizeof(buffer[15]), "%d", my_game.Corrupted_Food);
+    snprintf(buffer[16], sizeof(buffer[16]), "%d", floor);
+    params3[17] = game_id;
+
+    for (int i = 0; i < 17; i++) {
+        params3[i] = buffer[i];
+    }
+
+    PGresult *update_res = PQexecParams(conn, update_query, 18, NULL, params3, NULL, NULL, 0);
+
+    if (PQresultStatus(update_res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Error updating game: %s\n", PQerrorMessage(conn));
+    } else {
+        printf("Game updated successfully!\n");
+    }
+
+    PQclear(update_res);
+    PQfinish(conn);
+}
+
+int get_last_game_floor(const char *username) {
+
+
+    // Step 1: Retrieve user ID for the username
+    const char *find_user_query = "SELECT id FROM users WHERE username = $1";
+    const char *params1[1] = { username };
+    PGresult *res = PQexecParams(conn, find_user_query, 1, NULL, params1, NULL, NULL, 0);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Error finding user: %s\n", PQerrorMessage(conn));
+        PQclear(res);
+        PQfinish(conn);
+        return -1; // Error
+    }
+
+    if (PQntuples(res) == 0) {
+        fprintf(stderr, "Error: User not found\n");
+        PQclear(res);
+        PQfinish(conn);
+        return -1; // User not found
+    }
+
+    char *user_id = PQgetvalue(res, 0, 0);
+    PQclear(res);
+
+    // Step 2: Retrieve the floor of the most recent game for the user
+    const char *find_game_query = "SELECT floor FROM game WHERE user_id = $1 ORDER BY start_time DESC LIMIT 1";
+    const char *params2[1] = { user_id };
+    PGresult *game_res = PQexecParams(conn, find_game_query, 1, NULL, params2, NULL, NULL, 0);
+
+    if (PQresultStatus(game_res) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Error finding game: %s\n", PQerrorMessage(conn));
+        PQclear(game_res);
+        PQfinish(conn);
+        return -1; // Error
+    }
+
+    if (PQntuples(game_res) == 0) {
+        fprintf(stderr, "Error: No game found for user\n");
+        PQclear(game_res);
+        PQfinish(conn);
+        return -1; // No game found
+    }
+
+    int floor = atoi(PQgetvalue(game_res, 0, 0)); // Retrieve the floor value
+    PQclear(game_res);
+//    PQfinish(conn);
+
+    return floor; // Return the floor
+}
+
+

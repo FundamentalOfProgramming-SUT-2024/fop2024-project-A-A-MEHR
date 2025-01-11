@@ -1,23 +1,6 @@
 #include <ncurses.h>
+#include "database.c"
 
-typedef struct {
-    int health;
-    int hunger;
-    int gold;
-    int black_gold;
-    int Mace;
-    int Dagger;
-    int Magic_Wand;
-    int Normal_Arrow;
-    int Sword;
-    int Health;
-    int Speed;
-    int Damage;
-    int Normal_Food;
-    int Magic_Food;
-    int Best_Food;
-    int Corrupted_Food;
-} Game;
 Game my_game;
 
 int calc_gold(char g_char) {
@@ -169,4 +152,8 @@ void eat_food() {
     refresh();
     getch();
 
+}
+
+void update_game_in_database(char *username, int floor) {
+    update_game(my_game, username, floor);
 }
