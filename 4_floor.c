@@ -538,6 +538,10 @@ int last_floor(char *username, int new) {
         if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '&')) {
             generate_pass_key_lf(y_lf, x_lf);
         }
+        if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '^')) {
+            health_lf--;
+            mvprintw(0, 2, "Your health decreased by a trap!");
+        }
         if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '@')) {
             int pos = get_part_lf(y_lf, x_lf);
             check_key_lf(pos);
@@ -1102,9 +1106,15 @@ int check_key_lf(int pos) {
         int r_key = reverse_number_lf(key_pair_lf[pos]);
         if ((key_pair_lf[pos] != password) && (r_key != password)) {
             if (i == 0) {
+                init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
                 mvprintw(1, 2, "warning you entered first wrong password!        ");
+                attroff(COLOR_PAIR(1));
             } else if (i == 1) {
+                init_pair(2, COLOR_RED, COLOR_BLACK);
+                attron(COLOR_PAIR(2));
                 mvprintw(1, 2, "warning you entered second wrong password!       ");
+                attroff(COLOR_PAIR(2));
             } else if (i == 2) {
                 for (int i = 10; i > 0; i--) {
                     move(0, 0);  // Move to line 5, column 0

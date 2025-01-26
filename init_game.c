@@ -352,9 +352,9 @@ int first_floor(char *username, int new) {
     draw_map_to_terminal_ff();
     attron(COLOR_PAIR(color_pair));
     move(y_ff, x_ff);
-    char s=mvinch(y_ff,x_ff);
-    mvaddch(y_ff,x_ff,s);
-   attroff(COLOR_PAIR(color_pair));
+    char s = mvinch(y_ff, x_ff);
+    mvaddch(y_ff, x_ff, s);
+    attroff(COLOR_PAIR(color_pair));
     pthread_t thread_id;
     pthread_create(&thread_id, NULL, change_able_pass_ff, NULL);
     while ((ch = getch()) != 'q') {
@@ -518,8 +518,8 @@ int first_floor(char *username, int new) {
         }
         attron(COLOR_PAIR(color_pair));
         move(y_ff, x_ff);
-        char s=mvinch(y_ff,x_ff);
-        mvaddch(y_ff,x_ff,s);
+        char s = mvinch(y_ff, x_ff);
+        mvaddch(y_ff, x_ff, s);
         attroff(COLOR_PAIR(color_pair));
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '&')) {
             generate_pass_key_ff(y_ff, x_ff);
@@ -527,6 +527,10 @@ int first_floor(char *username, int new) {
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '<')) {
             stop_thread_ff = true;
             second_floor(username, 1);
+        }
+        if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '^')) {
+            health_ff--;
+            mvprintw(0, 2, "Your health decreased by a trap!");
         }
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '@')) {
             int pos = get_part_ff(y_ff, x_ff);
@@ -594,8 +598,8 @@ int first_floor(char *username, int new) {
         }
         attron(COLOR_PAIR(color_pair));
         move(y_ff, x_ff);
-        char s1=mvinch(y_ff,x_ff);
-        mvaddch(y_ff,x_ff,s1);
+        char s1 = mvinch(y_ff, x_ff);
+        mvaddch(y_ff, x_ff, s1);
         attroff(COLOR_PAIR(color_pair));
 //        getch();
 //        mvaddch(10,3,'T');
@@ -1092,9 +1096,15 @@ int check_key_ff(int pos) {
         int r_key = reverse_number_ff(key_pair_ff[pos]);
         if ((key_pair_ff[pos] != password) && (r_key != password)) {
             if (i == 0) {
+                init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
                 mvprintw(1, 2, "warning you entered first wrong password!        ");
+                attroff(COLOR_PAIR(1));
             } else if (i == 1) {
+                init_pair(2, COLOR_RED, COLOR_BLACK);
+                attron(COLOR_PAIR(2));
                 mvprintw(1, 2, "warning you entered second wrong password!       ");
+                attroff(COLOR_PAIR(2));
             } else if (i == 2) {
                 for (int i = 10; i > 0; i--) {
                     move(0, 0);  // Move to line 5, column 0
@@ -1170,7 +1180,7 @@ void *draw_health_bar_ff() {
 
         // Display the current health_ff value below the bar
         mvprintw(1, 2, "Current Health: %d%%", health_ff);
-        if(health_ff==0){
+        if (health_ff == 0) {
             clear();
             refresh();
             mvprintw(1, 2, "Health finished , you died!");

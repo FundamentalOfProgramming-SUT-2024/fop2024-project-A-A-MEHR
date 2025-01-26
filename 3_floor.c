@@ -530,6 +530,10 @@ int third_floor(char *username, int new) {
             stop_thread_tf = true;
             last_floor(username, 1);
         }
+        if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '^')) {
+            health_tf--;
+            mvprintw(0, 2, "Your health decreased by a trap!");
+        }
         if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '@')) {
             int pos = get_part_tf(y_tf, x_tf);
             check_key_tf(pos);
@@ -1066,9 +1070,15 @@ int check_key_tf(int pos) {
         int r_key = reverse_number_tf(key_pair_tf[pos]);
         if ((key_pair_tf[pos] != password) && (r_key != password)) {
             if (i == 0) {
+                init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
                 mvprintw(1, 2, "warning you entered first wrong password!        ");
+                attroff(COLOR_PAIR(1));
             } else if (i == 1) {
+                init_pair(2, COLOR_RED, COLOR_BLACK);
+                attron(COLOR_PAIR(2));
                 mvprintw(1, 2, "warning you entered second wrong password!       ");
+                attroff(COLOR_PAIR(2));
             } else if (i == 2) {
                 for (int i = 10; i > 0; i--) {
                     move(0, 0);  // Move to line 5, column 0
