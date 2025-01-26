@@ -101,17 +101,125 @@ void display_guns() {
     // Print the data
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            mvwprintw(stdscr, i + 2, j * 10 + 2, "%s -> %d", headers[i], data[i][j]);
+            switch (i) {
+                case 0:
+                    mvwprintw(stdscr, i + 2, j * 10 + 2, "🥍 %s -> %d short range, power:5, distance:1", headers[i],
+                              data[i][j]);
+                    break;
+                case 1:
+                    mvwprintw(stdscr, i + 2, j * 10 + 2, " 🔪 %s -> %d long range, power:12, distance:5", headers[i],
+                              data[i][j]);
+                    break;
+                case 2:
+                    mvwprintw(stdscr, i + 2, j * 10 + 2, "🦯  %s -> %d long range, power:15, distance:10", headers[i],
+                              data[i][j]);
+                    break;
+                case 3:
+                    mvwprintw(stdscr, i + 2, j * 10 + 2, "🏹 %s -> %d long range, power:5, distance:5", headers[i],
+                              data[i][j]);
+                    break;
+                case 4:
+                    mvwprintw(stdscr, i + 2, j * 10 + 2, "🗡 %s -> %d short range, power:10, distance:1", headers[i],
+                              data[i][j]);
+                    break;
+            }
         }
     }
 
     // Refresh the window
     refresh();
     // Wait for user input before closing the window
-    mvwprintw(stdscr, win_height - 2, 2, "Press any key to close...");
+    mvwprintw(stdscr, win_height - 1, 2, "change gun or Press other keys to close...");
+    refresh();
+    char gun = getch();
+    switch (gun) {
+        case 'm':
+            if (data[0][0] == 0)
+                mvwprintw(stdscr, win_height - 2, 2, "Mace isn't available in guns!");
+            else if (my_game.current_gun != -1) {
+                mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
+                if (getch() == 'w') {
+                    my_game.current_gun = 0;
+                    my_game.Mace--;
+                    mvwprintw(stdscr, win_height - 2, 2, "your gun is Mace now!");
+                }
+            } else {
+                my_game.current_gun = 0;
+                my_game.Mace--;
+                mvwprintw(stdscr, win_height - 2, 2, "your gun is Mace now!");
+            }
+            break;
+        case 'd':
+            if (data[1][0] == 0)
+                mvwprintw(stdscr, win_height - 2, 2, "Dagger isn't available in guns!");
+            else if (my_game.current_gun != -1) {
+                mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
+                if (getch() == 'w') {
+                    my_game.current_gun = 1;
+                    my_game.Dagger--;
+                    mvwprintw(stdscr, win_height - 2, 2, "your gun is Dagger now!");
+                }
+            } else {
+                my_game.current_gun = 1;
+                my_game.Dagger--;
+                mvwprintw(stdscr, win_height - 2, 2, "your gun is Dagger now!");
+            }
+            break;
+        case 'w':
+            if (data[2][0] == 0)
+                mvwprintw(stdscr, win_height - 2, 2, "Magic_Wand isn't available in guns!");
+            else if (my_game.current_gun != -1) {
+                mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
+                if (getch() == 'w') {
+                    my_game.current_gun = 2;
+                    my_game.Magic_Wand--;
+                    mvwprintw(stdscr, win_height - 2, 2, "your gun is Magic_Wand now!");
+                }
+            } else {
+                my_game.current_gun = 2;
+                my_game.Magic_Wand--;
+                mvwprintw(stdscr, win_height - 2, 2, "your gun is Magic_Wand now!");
+            }
+            break;
+        case 'a':
+            if (data[3][0] == 0)
+                mvwprintw(stdscr, win_height - 2, 2, "Normal_Arrow isn't available in guns!");
+            else if (my_game.current_gun != -1) {
+                mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
+                if (getch() == 'w') {
+                    my_game.current_gun = 3;
+                    my_game.Normal_Arrow--;
+                    mvwprintw(stdscr, win_height - 2, 2, "your gun is Normal_Arrow now!");
+                }
+
+            } else {
+                my_game.current_gun = 3;
+                my_game.Normal_Arrow--;
+                mvwprintw(stdscr, win_height - 2, 2, "your gun is Normal_Arrow now!");
+            }
+            break;
+        case 's':
+            if (data[4][0] == 0)
+                mvwprintw(stdscr, win_height - 2, 2, "Sword isn't available in guns!");
+            else if (my_game.current_gun != -1) {
+                mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
+                if (getch() == 'w') {
+                    my_game.current_gun = 4;
+                    my_game.Sword--;
+                    mvwprintw(stdscr, win_height - 2, 2, "your gun is Sword now!");
+                }
+
+            } else {
+                my_game.current_gun = 4;
+                my_game.Sword--;
+                mvwprintw(stdscr, win_height - 2, 2, "your gun is Sword now!");
+            }
+            break;
+        default:
+            mvwprintw(stdscr, win_height - 2, 2, "There isn't such that gun!");
+    }
     refresh();
     getch();
-
     // Delete the window
 }
 
@@ -156,5 +264,5 @@ void eat_food() {
 
 void update_game_in_database(char *username, int floor) {
     update_game(my_game, username, floor);
-    update_user_total_score(my_game,username);
+    update_user_total_score(my_game, username);
 }

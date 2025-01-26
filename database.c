@@ -20,6 +20,7 @@ typedef struct {
     int Magic_Food;
     int Best_Food;
     int Corrupted_Food;
+    int current_gun;
 } Game;
 typedef struct {
     char username[100];
@@ -499,7 +500,7 @@ int get_last_game_floor(const char *username) {
     return floor; // Return the floor
 }
 
-void update_user_total_score( Game my_game, const char *username) {
+void update_user_total_score(Game my_game, const char *username) {
     // Step 1: Find user ID
     const char *find_user_query = "SELECT id FROM users WHERE username = $1";
     const char *params1[1] = {username};

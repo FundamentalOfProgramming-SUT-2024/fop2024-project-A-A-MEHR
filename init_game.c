@@ -304,6 +304,7 @@ void draw_border_ff() {
 }
 
 int first_floor(char *username, int new) {
+    my_game.current_gun = -1;
     int color_pair;
     int ch;
     // Cursor starting position
