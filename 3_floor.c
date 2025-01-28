@@ -405,7 +405,7 @@ int third_floor(char *username, int new) {
         switch (ch) {
             case 'e':
                 clear();
-                eat_food();
+                //eat_food();
                 load_map_from_file_tf(username);
                 draw_map_to_terminal_tf();
                 break;

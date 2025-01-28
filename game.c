@@ -42,22 +42,48 @@ void calc_spell(char g_char) {
 int calc_food(char g_char) {
     if ((my_game.Normal_Food + my_game.Magic_Food + my_game.Best_Food + my_game.Corrupted_Food) > 4)
         return 0;
-
     if (g_char == 'n') {
         my_game.Normal_Food++;
+        if (my_game.Corrupted_Food)
+            my_game.Health -= 10;
+        else
+            my_game.Health -= 10;
+
     } else if (g_char == 'm') {
         my_game.Magic_Food++;
+        my_game.Health += 10;
     } else if (g_char == 'b') {
         my_game.Best_Food++;
+        my_game.Health += 10;
     } else if (g_char == 'c') {
-        my_game.Corrupted_Food++;
+//        my_game.Corrupted_Food++;
     }
     return 1;
 }
+
+void *food_change() {
+    while (1) {
+        if (my_game.Best_Food > 0) {
+            my_game.Normal_Food++;
+            my_game.Best_Food--;
+        }
+        if (my_game.Magic_Food > 0) {
+            my_game.Normal_Food++;
+            my_game.Magic_Food--;
+        }
+        if (my_game.Normal_Food > 0) {
+            my_game.Normal_Food--;
+            my_game.Corrupted_Food++;
+        }
+        sleep(60);
+    }
+}
+
 int is_hungry() {
     if ((my_game.Normal_Food + my_game.Magic_Food + my_game.Best_Food + my_game.Corrupted_Food) > 4)
         return 0;
 }
+
 void display_spell() {
     int rows = 3, cols = 1; // Table dimensions
     char *headers[] = {"Health", "Speed", "Damage"};
@@ -253,11 +279,14 @@ void return_to_bag() {
     }
 }
 
-void eat_food() {
+void eat_food(int *speed, int *power) {
     int rows = 4, cols = 1; // Table dimensions
     char *headers[] = {"Normal_Food", "Magic_Food", "Best_Food", "Corrupted_Food"};
-    int data[4][1] = {my_game.Normal_Food, my_game.Magic_Food, my_game.Best_Food, my_game.Corrupted_Food};
-
+    int data[4][1];
+    data[0][0] = my_game.Normal_Food;
+    data[1][0] = my_game.Magic_Food;
+    data[2][0] = my_game.Best_Food;
+    data[3][0] = my_game.Corrupted_Food;
     int win_height = rows + 4; // Extra space for headers and borders
 
     mvprintw(0, 2, "Enter e if you want to eat food!");
@@ -282,7 +311,29 @@ void eat_food() {
             return;
         }
         my_game.Normal_Food--;
-        my_game.Health += 50;
+        my_game.Health += 20;
+        mvprintw(0, 2, "Your Health is %d now!", my_game.Health);
+    }
+    if (inp == 'm') {
+        if (my_game.Magic_Food < 1) {
+            mvprintw(0, 2, "Not enough Magic_food!");
+            refresh();
+            return;
+        }
+        (*speed) = 2;
+        my_game.Magic_Food--;
+        my_game.Health += 20;
+        mvprintw(0, 2, "Your Health is %d now!", my_game.Health);
+    }
+    if (inp == 'b') {
+        if (my_game.Best_Food < 1) {
+            mvprintw(0, 2, "Not enough Best_food!");
+            refresh();
+            return;
+        }
+        (*power) = 2;
+        my_game.Best_Food--;
+        my_game.Health += 20;
         mvprintw(0, 2, "Your Health is %d now!", my_game.Health);
     }
     // Wait for user input before closing the window

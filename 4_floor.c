@@ -417,7 +417,7 @@ int last_floor(char *username, int new) {
         switch (ch) {
             case 'e':
                 clear();
-                eat_food();
+                //eat_food();
                 load_map_from_file_lf(username);
                 draw_map_to_terminal_lf();
                 break;

@@ -29,7 +29,7 @@ int power = 1;
 int speed = 1;
 int health_increase = 1;
 int spell_impact = 100;
-int can_move = 1000;
+int can_move = -1;
 char username_ff[20];
 room_ff rooms_ff[6];
 int health_ff = 101;
@@ -350,6 +350,8 @@ void draw_border_ff() {
 }
 
 int first_floor(char *username, int new) {
+    pthread_t thread_id_f;
+    pthread_create(&thread_id_f, NULL, food_change, NULL);
     int arr[3];
     strcpy(username_ff, username);
     my_game.current_gun = 0;
@@ -460,7 +462,10 @@ int first_floor(char *username, int new) {
                 break;
             case 'e':
                 clear();
-                eat_food();
+                eat_food(&speed, &power);
+                mvprintw(10, 4, "%d", speed);
+                spell_impact=1;
+                getch();
                 load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
                 break;
@@ -585,8 +590,7 @@ int first_floor(char *username, int new) {
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_ff, NULL);
         } else {
-            if (can_move < 1000 && can_move > 0) {
-                mvprintw(0, 0, "sssssssssssssssssssssss");
+            if (can_move > 0) {
                 move_enemy(&enemy_y_ff_copy, &enemy_x_ff_copy, y_ff - y_ff_copy, x_ff - x_ff_copy);
                 can_move--;
             }
@@ -786,8 +790,8 @@ void move_enemy(int *enemy_y_ff_copy, int *enemy_x_ff_copy, int y_d, int x_d) {
 
 
     char enemy_t = mvinch(y_enemy, x_enemy);
-    mvprintw(7, 4, "getting damage %c!",enemy_t);
-    getch();
+    mvprintw(7, 4, "getting damage %c!", enemy_t);
+//    getch();
 
     // Update map and character position
     {
@@ -798,6 +802,11 @@ void move_enemy(int *enemy_y_ff_copy, int *enemy_x_ff_copy, int y_d, int x_d) {
         map_ff[y_enemy + y_d - 2][x_enemy + x_d].health = map_ff[y_enemy - 2][x_enemy].health;
         map_ff[y_enemy + y_d - 2][x_enemy + x_d].moveable = map_ff[y_enemy - 2][x_enemy].moveable - 1;
 
+        map_ff[y_enemy - 2][x_enemy].symbol = '.';
+        map_ff[y_enemy - 2][x_enemy].health = 0;
+        map_ff[y_enemy - 2][x_enemy].moveable = 0;
+        add_file_ff(y_enemy, x_enemy, '.');
+        mvaddch(y_enemy, x_enemy, '.');
         load_map_from_file_ff(username_ff);
         draw_map_to_terminal_ff();
 
@@ -1039,6 +1048,8 @@ fight_by_normal_arrow_down(char *username, int y_ff, int x_ff, int x_copy, int y
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!", str);
+                    getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'A');
@@ -1083,6 +1094,8 @@ fight_by_normal_arrow_up(char *username, int y_ff, int x_ff, int x_copy, int y_c
                 getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'A');
@@ -1126,6 +1139,8 @@ fight_by_normal_arrow_left(char *username, int y_ff, int x_ff, int x_copy, int y
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'A');
@@ -1169,6 +1184,8 @@ fight_by_normal_arrow_right(char *username, int y_ff, int x_ff, int x_copy, int 
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'A');
@@ -1211,6 +1228,8 @@ fight_by_magic_wand_down(char *username, int y_ff, int x_ff, int x_copy, int y_c
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'W');
@@ -1252,6 +1271,8 @@ void fight_by_magic_wand_up(char *username, int y_ff, int x_ff, int x_copy, int 
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'W');
@@ -1294,6 +1315,8 @@ fight_by_magic_wand_left(char *username, int y_ff, int x_ff, int x_copy, int y_c
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'W');
@@ -1336,6 +1359,8 @@ fighy_by_magic_wand_right(char *username, int y_ff, int x_ff, int x_copy, int y_
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'W');
@@ -1376,6 +1401,8 @@ void figh_by_Dagger_down(char *username, int y_ff, int x_ff, int x_copy, int y_c
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'D');
@@ -1421,6 +1448,8 @@ void fight_by_Dagger_up(char *username, int y_ff, int x_ff, int x_copy, int y_co
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'D');
@@ -1466,6 +1495,8 @@ void fight_by_Dagger_left(char *username, int y_ff, int x_ff, int x_copy, int y_
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'D');
@@ -1512,6 +1543,8 @@ void fight_by_Dagger_right(char *username, int y_ff, int x_ff, int x_copy, int y
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    mvprintw(0, 2, "The enemy died!");
+                    getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
                     mvaddch(y_ff, x_ff, 'D');
@@ -2161,7 +2194,7 @@ void *draw_health_bar_ff() {
         }
         move(y_ff, x_ff);
         refresh();
-        sleep(2);
+        sleep(3);
     }
     return NULL;
 }
@@ -2204,7 +2237,7 @@ void *increase_health_bar_ff() {
                 return NULL;
         }
 
-        sleep(2); // تأخیر برای افزایش تدریجی
+        sleep(4); // تأخیر برای افزایش تدریجی
     }
 
     return NULL;
