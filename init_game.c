@@ -37,6 +37,7 @@ int room_num_ff = 0;
 int show_map_ff = 0;
 #define MAX_HEALTH_ff 100
 volatile bool stop_thread_ff = false;
+volatile bool stop_thread_ff_2 = false;
 #define MAP_ROWS_ff 36
 #define MAP_COLS_ff 160
 int room_type_ff = 0;
@@ -350,8 +351,11 @@ void draw_border_ff() {
 }
 
 int first_floor(char *username, int new) {
+    my_game.Health = 100;
     pthread_t thread_id_f;
     pthread_create(&thread_id_f, NULL, food_change, NULL);
+    pthread_t thread_id_ff;
+    pthread_create(&thread_id_ff, NULL, increase_health_bar_ff, NULL);
     int arr[3];
     strcpy(username_ff, username);
     my_game.current_gun = 0;
@@ -464,7 +468,7 @@ int first_floor(char *username, int new) {
                 clear();
                 eat_food(&speed, &power);
                 mvprintw(10, 4, "%d", speed);
-                spell_impact=1;
+                spell_impact = 1;
                 getch();
                 load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
@@ -574,7 +578,7 @@ int first_floor(char *username, int new) {
         if (check_proximity_of_enemy(y_ff, x_ff, arr)[0]) {
             enemy_x_ff_copy = check_proximity_of_enemy(y_ff, x_ff, arr)[2];
             enemy_y_ff_copy = check_proximity_of_enemy(y_ff, x_ff, arr)[1];
-            mvprintw(5, 0, "%d %d %c", enemy_y_ff_copy, enemy_x_ff_copy, mvinch(enemy_y_ff_copy, enemy_x_ff_copy));
+            //  mvprintw(5, 0, "%d %d %c", enemy_y_ff_copy, enemy_x_ff_copy, mvinch(enemy_y_ff_copy, enemy_x_ff_copy));
             switch (check_proximity_of_enemy(y_ff, x_ff, arr)[0]) {
                 case 3:
                     can_move = 5;
@@ -671,8 +675,8 @@ int first_floor(char *username, int new) {
                 if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'h')) {
                     health_increase = 2;
                     stop_thread_ff = 0;
-                    pthread_t thread_id;
-                    pthread_create(&thread_id, NULL, increase_health_bar_ff, NULL);
+//                    pthread_t thread_id;
+//                    pthread_create(&thread_id, NULL, increase_health_bar_ff, NULL);
                 }
                 spell_impact = 1;
                 calc_spell(mvinch(y_ff, x_ff) & A_CHARTEXT);
@@ -824,30 +828,85 @@ char *is_enemy(int y, int x, int damage) {
 
     switch (target) {
         case 'N':
+            if (map_ff[y - 2][x].health <= 0) {
+                mvprintw(0, 2, "The Deamon is died!");
+                getch();
+                add_file_ff(y, x, '.');
+                map_ff[y - 2][x].number = 1;
+                map_ff[y - 2][x].symbol = '.';
+                mvaddch(y, x, '.');
+                load_map_from_file_ff(username_ff);
+                draw_map_to_terminal_ff();
+                break;
+            }
             map_ff[y - 2][x].health -= damage;
             health = map_ff[y - 2][x].health;
             snprintf(buffer, sizeof(buffer), "Deamon : %d", health);
             return buffer;
 
         case 'M':
+            if (map_ff[y - 2][x].health <= 0) {
+                mvprintw(0, 2, "The Monster died!");
+                getch();
+                add_file_ff(y, x, '.');
+                map_ff[y - 2][x].number = 1;
+                map_ff[y - 2][x].symbol = '.';
+                mvaddch(y, x, '.');
+                load_map_from_file_ff(username_ff);
+                draw_map_to_terminal_ff();
+                break;
+            }
             map_ff[y - 2][x].health -= damage;
             health = map_ff[y - 2][x].health;
             snprintf(buffer, sizeof(buffer), "Monster : %d", health);
             return buffer;
 
         case 'g':
+            if (map_ff[y - 2][x].health <= 0) {
+                mvprintw(0, 2, "The Giant is died!");
+                getch();
+                add_file_ff(y, x, '.');
+                map_ff[y - 2][x].number = 1;
+                map_ff[y - 2][x].symbol = '.';
+                mvaddch(y, x, '.');
+                load_map_from_file_ff(username_ff);
+                draw_map_to_terminal_ff();
+                break;
+            }
             map_ff[y - 2][x].health -= damage;
             health = map_ff[y - 2][x].health;
             snprintf(buffer, sizeof(buffer), "Giant : %d", health);
             return buffer;
 
         case 'K':
+            if (map_ff[y - 2][x].health <= 0) {
+                mvprintw(0, 2, "The Snake is died!");
+                getch();
+                add_file_ff(y, x, '.');
+                map_ff[y - 2][x].number = 1;
+                map_ff[y - 2][x].symbol = '.';
+                mvaddch(y, x, '.');
+                load_map_from_file_ff(username_ff);
+                draw_map_to_terminal_ff();
+                break;
+            }
             map_ff[y - 2][x].health -= damage;
             health = map_ff[y - 2][x].health;
             snprintf(buffer, sizeof(buffer), "Snake : %d", health);
             return buffer;
 
         case 'U':
+            if (map_ff[y - 2][x].health <= 0) {
+                mvprintw(0, 2, "The Undeed is died!");
+                getch();
+                add_file_ff(y, x, '.');
+                map_ff[y - 2][x].number = 1;
+                map_ff[y - 2][x].symbol = '.';
+                mvaddch(y, x, '.');
+                load_map_from_file_ff(username_ff);
+                draw_map_to_terminal_ff();
+                break;
+            }
             map_ff[y - 2][x].health -= damage;
             health = map_ff[y - 2][x].health;
             snprintf(buffer, sizeof(buffer), "Undeed : %d", health);
@@ -860,15 +919,17 @@ char *is_enemy(int y, int x, int damage) {
 
 
 void fight_by_short_range(int y_ff, int x_ff, int damage) {
-    for (int i = -2; i <= 2; ++i) {
-        for (int j = -2; j <= 2; ++j) {
-            char *str = is_enemy(y_ff + i, x_ff + j, damage);
-            if (str) {
-                mvprintw(0, 2, "You hitted %s !", str);
-                getch();
+    do {
+        for (int i = -1; i <= 1; ++i) {
+            for (int j = -1; j <= 1; ++j) {
+                char *str = is_enemy(y_ff + i, x_ff + j, damage);
+                if (str) {
+                    mvprintw(0, 2, "You hitted %s !", str);
+                    getch();
+                }
             }
         }
-    }
+    } while (getch()=='a');
 }
 
 void fight(char *username, int y_ff, int x_ff) {
@@ -1048,7 +1109,7 @@ fight_by_normal_arrow_down(char *username, int y_ff, int x_ff, int x_copy, int y
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!", str);
+                    mvprintw(0, 2, "The enemy is died!", str);
                     getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1094,7 +1155,7 @@ fight_by_normal_arrow_up(char *username, int y_ff, int x_ff, int x_copy, int y_c
                 getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1139,7 +1200,7 @@ fight_by_normal_arrow_left(char *username, int y_ff, int x_ff, int x_copy, int y
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1184,7 +1245,7 @@ fight_by_normal_arrow_right(char *username, int y_ff, int x_ff, int x_copy, int 
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'A');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1228,7 +1289,7 @@ fight_by_magic_wand_down(char *username, int y_ff, int x_ff, int x_copy, int y_c
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1271,7 +1332,7 @@ void fight_by_magic_wand_up(char *username, int y_ff, int x_ff, int x_copy, int 
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1315,7 +1376,7 @@ fight_by_magic_wand_left(char *username, int y_ff, int x_ff, int x_copy, int y_c
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1359,7 +1420,7 @@ fighy_by_magic_wand_right(char *username, int y_ff, int x_ff, int x_copy, int y_
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'W');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1401,7 +1462,7 @@ void figh_by_Dagger_down(char *username, int y_ff, int x_ff, int x_copy, int y_c
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1448,7 +1509,7 @@ void fight_by_Dagger_up(char *username, int y_ff, int x_ff, int x_copy, int y_co
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1495,7 +1556,7 @@ void fight_by_Dagger_left(char *username, int y_ff, int x_ff, int x_copy, int y_
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -1543,7 +1604,7 @@ void fight_by_Dagger_right(char *username, int y_ff, int x_ff, int x_copy, int y
 //                getch();
                 flag = 0;
                 if (map_ff[y_ff - 2][x_ff].health <= 0) {
-                    mvprintw(0, 2, "The enemy died!");
+                    mvprintw(0, 2, "The enemy is died!");
                     getch();
                     add_file_ff(y_ff, x_ff, 'D');
                     map_ff[y_ff - 2][x_ff].number = 1;
@@ -2164,37 +2225,37 @@ void *draw_health_bar_ff() {
         // clrtoeol();
         //  refresh();
         int width = 50; // Width of the health_ff bar
-        int bar_length = (health_ff * width) / MAX_HEALTH_ff;
-        health_ff--;
+        int bar_length = (my_game.Health * width) / MAX_HEALTH_ff;
+        my_game.Health--;
         // Draw the label and open the health_ff bar
-        mvprintw(0, 2, "Health: [");
+        mvprintw(0, 40, "Health: [");
 
         // Draw the green part of the health_ff bar
         attron(COLOR_PAIR(1));
         for (int i = 0; i < bar_length; i++) {
-            mvaddch(0, 10 + i, ' ');
+            mvaddch(0, 40 + i, ' ');
         }
         attroff(COLOR_PAIR(1));
 
         // Draw the empty part of the health_ff bar
         for (int i = bar_length; i < width; i++) {
-            mvaddch(0, 10 + i, ' ');
+            mvaddch(0, 40 + i, ' ');
         }
 
         // Close the health_ff bar
-        mvaddch(0, 10 + width, ']');
+        mvaddch(0, 40 + width, ']');
 
         // Display the current health_ff value below the bar
-        mvprintw(1, 2, "Current Health: %d%%", health_ff);
+        mvprintw(1, 40, "Current Health: %d%%", my_game.Health);
         if (health_ff == 0) {
             clear();
             refresh();
-            mvprintw(1, 2, "Health finished , you died!");
+            mvprintw(1, 40, "Health finished , you died!");
             exit(1);
         }
         move(y_ff, x_ff);
         refresh();
-        sleep(3);
+        sleep(4);
     }
     return NULL;
 }
@@ -2203,37 +2264,37 @@ void *increase_health_bar_ff() {
     // تعریف رنگ برای سلامتی
     init_pair(2, COLOR_GREEN, COLOR_GREEN);
 
-    while (!stop_thread_ff) {
+    while (!stop_thread_ff_2) {
         // اگر بازیکن گرسنه نباشد و سلامتی کمتر از حداکثر باشد
-        if (!is_hungry() && health_ff < MAX_HEALTH_ff) {
-            health_ff += health_increase; // افزایش تدریجی سلامتی
+        if (!is_hungry() && my_game.Health < MAX_HEALTH_ff) {
+            my_game.Health += health_increase; // افزایش تدریجی سلامتی
 
             // رسم مجدد نوار سلامتی
             int width = 50; // عرض نوار سلامتی
-            int bar_length = (health_ff * width) / MAX_HEALTH_ff;
+            int bar_length = (my_game.Health * width) / MAX_HEALTH_ff;
 
-            mvprintw(0, 2, "Health: [");
+            mvprintw(0, 40, "Health: [");
 
             // قسمت سبز نوار سلامتی
             attron(COLOR_PAIR(2));
             for (int i = 0; i < bar_length; i++) {
-                mvaddch(0, 10 + i, ' ');
+                mvaddch(0, 40 + i, ' ');
             }
             attroff(COLOR_PAIR(2));
 
             // قسمت خالی نوار سلامتی
             for (int i = bar_length; i < width; i++) {
-                mvaddch(0, 10 + i, ' ');
+                mvaddch(0, 40 + i, ' ');
             }
 
             // بستن نوار سلامتی
-            mvaddch(0, 10 + width, ']');
+            mvaddch(0, 40 + width, ']');
 
             // نمایش مقدار سلامتی فعلی زیر نوار
-            mvprintw(1, 2, "Current Health: %d%%", health_ff);
+            mvprintw(1, 40, "Current Health: %d%%", my_game.Health);
             move(y_ff, x_ff);
             refresh();
-            if (health_ff >= 100)
+            if (my_game.Health >= 100)
                 return NULL;
         }
 
