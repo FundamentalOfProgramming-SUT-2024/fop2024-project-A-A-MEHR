@@ -21,6 +21,7 @@ typedef struct {
 typedef struct {
     char symbol;   // Symbol to display (e.g., 'p')
     bool visible;  // Visibility state
+    int number;
 } Cell_sf;
 room_sf rooms_sf[6];
 int health_sf = 101;
@@ -560,7 +561,7 @@ int second_floor(char *username, int new) {
             (mvinch(y_sf, x_sf) & A_CHARTEXT) == 'S') {
             char inp = getch();
             if (inp == 'g') {
-                calc_gun(mvinch(y_sf, x_sf) & A_CHARTEXT);
+                calc_gun(mvinch(y_sf, x_sf) & A_CHARTEXT, map_sf[y_sf - 2][x_sf].number);
                 add_file_sf(y_sf, x_sf, '.');
                 mvaddch(y_sf, x_sf, '.');
                 load_map_from_file_sf(username);
@@ -1155,7 +1156,7 @@ void *draw_health_bar_sf() {
 
         // Display the current health_sf value below the bar
         mvprintw(1, 2, "Current Health: %d%%", health_sf);
-        if(health_sf==0){
+        if (health_sf == 0) {
             clear();
             refresh();
             mvprintw(1, 2, "Health finished , you died!");

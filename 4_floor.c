@@ -21,6 +21,7 @@ typedef struct {
 typedef struct {
     char symbol;   // Symbol to display (e.g., 'p')
     bool visible;  // Visibility state
+    int number;
 } Cell_lf;
 room_lf rooms_lf[6];
 int health_lf = 101;
@@ -568,7 +569,7 @@ int last_floor(char *username, int new) {
             (mvinch(y_lf, x_lf) & A_CHARTEXT) == 'S') {
             char inp = getch();
             if (inp == 'g') {
-                calc_gun(mvinch(y_lf, x_lf) & A_CHARTEXT);
+                calc_gun(mvinch(y_lf, x_lf) & A_CHARTEXT, map_lf[y_lf - 2][x_lf].number);
                 add_file_lf(y_lf, x_lf, '.');
                 mvaddch(y_lf, x_lf, '.');
                 load_map_from_file_lf(username);

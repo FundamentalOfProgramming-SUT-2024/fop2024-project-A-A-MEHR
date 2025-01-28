@@ -10,6 +10,7 @@
 #include <unistd.h> // For usleep
 #include <locale.h>
 #include "2_floor.c"
+#include "war1.c"
 
 typedef struct {
     int y;
@@ -20,7 +21,16 @@ typedef struct {
 typedef struct {
     char symbol;   // Symbol to display (e.g., 'p')
     bool visible;  // Visibility state
+    int health;
+    int moveable;
+    int number;
 } Cell_ff;
+int power = 1;
+int speed = 1;
+int health_increase = 1;
+int spell_impact = 100;
+int can_move = 1000;
+char username_ff[20];
 room_ff rooms_ff[6];
 int health_ff = 101;
 int room_num_ff = 0;
@@ -37,6 +47,12 @@ int show_health_bar_ff = 0;
 char str1[50] = "1";
 
 void get_parts_ff(int *rands);
+
+void move_enemy(int *enemy_y_ff_copy, int *enemy_x_ff_copy, int y_d, int x_d);
+
+int *check_proximity_of_enemy(int y_ff, int x_ff, int arr[]);
+
+void *increase_health_bar_ff();
 
 void draw_room_ff();
 
@@ -75,6 +91,36 @@ void move_to_second_line_ff(FILE *file);
 void load_map_from_file_ff();
 
 void draw_map_to_terminal_ff();
+
+void fight(char *username, int y_ff, int x_ff);
+
+void fight_by_Dagger_right(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage);
+
+void fight_by_Dagger_left(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage);
+
+void fight_by_Dagger_up(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage);
+
+void figh_by_Dagger_down(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage);
+
+void
+fighy_by_magic_wand_right(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void fight_by_magic_wand_left(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void fight_by_magic_wand_up(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void fight_by_magic_wand_down(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void
+fight_by_normal_arrow_right(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+
+void
+fight_by_normal_arrow_left(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+
+void fight_by_normal_arrow_up(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+
+void
+fight_by_normal_arrow_down(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
 
 void move_to_second_line_ff(FILE *file) {
     char buffer[1024]; // Buffer to hold the first line
@@ -304,7 +350,10 @@ void draw_border_ff() {
 }
 
 int first_floor(char *username, int new) {
-    my_game.current_gun = -1;
+    int arr[3];
+    strcpy(username_ff, username);
+    my_game.current_gun = 0;
+    my_game.Mace = 1;
     int color_pair;
     int ch;
     // Cursor starting position
@@ -359,41 +408,45 @@ int first_floor(char *username, int new) {
     pthread_t thread_id;
     pthread_create(&thread_id, NULL, change_able_pass_ff, NULL);
     while ((ch = getch()) != 'q') {
+        int x_ff_copy;
+        int y_ff_copy;
+        x_ff_copy = x_ff;
+        y_ff_copy = y_ff;
         if (ch == 'f') {
             ch = getch();
             switch (ch) {
                 case KEY_UP:
                     while (y_ff > 0) {
-                        y_ff--;
+                        y_ff -= speed;
                         if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
-                            y_ff++;
+                            y_ff += speed;
                             break;
                         }
                     }
                     break;
                 case KEY_DOWN:
                     while (y_ff < MAP_ROWS_ff - 1) {
-                        y_ff++;
+                        y_ff += speed;
                         if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
-                            y_ff--;
+                            y_ff -= speed;
                             break;
                         }
                     }
                     break;
                 case KEY_LEFT:
                     while (x_ff > 0) {
-                        x_ff--;
+                        x_ff -= speed;
                         if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
-                            x_ff++;
+                            x_ff += speed;
                             break;
                         }
                     }
                     break;
                 case KEY_RIGHT:
                     while (x_ff < MAP_COLS_ff - 1) {
-                        x_ff++;
+                        x_ff += speed;
                         if ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '.' && (mvinch(y_ff, x_ff) & A_CHARTEXT) != '#') {
-                            x_ff--;
+                            x_ff -= speed;
                             break;
                         }
                     }
@@ -401,6 +454,10 @@ int first_floor(char *username, int new) {
             }
         }
         switch (ch) {
+            case ' ':
+                //  char gun = getch();
+                fight(username, y_ff, x_ff);
+                break;
             case 'e':
                 clear();
                 eat_food();
@@ -432,83 +489,109 @@ int first_floor(char *username, int new) {
                 }
                 break;
             case KEY_DOWN:
-                if (y_ff < MAP_ROWS_ff - 1) y_ff++;
+                if (y_ff < MAP_ROWS_ff - 1) y_ff += speed;
                 update_visibility_ff(y_ff, x_ff);
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
-                    y_ff--;
+                    y_ff -= speed;
                 }
                 break;
             case KEY_LEFT:
-                if (x_ff > 0) x_ff--;
+                if (x_ff > 0) x_ff -= speed;
                 update_visibility_ff(y_ff, x_ff);
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
-                    x_ff++;
+                    x_ff += speed;
                 }
                 break;
             case KEY_RIGHT:
-                if (x_ff < MAP_COLS_ff - 1) x_ff++;
+                if (x_ff < MAP_COLS_ff - 1) x_ff += speed;
                 update_visibility_ff(y_ff, x_ff);
 
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '=') {
-                    x_ff--;
+                    x_ff -= speed;
                 }
                 break;
             case 'p':
-                if (y_ff > 0) y_ff--;
-                if (x_ff < MAP_COLS_ff - 1) x_ff++;
+                if (y_ff > 0) y_ff -= speed;
+                if (x_ff < MAP_COLS_ff - 1) x_ff += speed;
                 update_visibility_ff(y_ff, x_ff);
 
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
-                    y_ff++;
-                    x_ff--;
+                    y_ff += speed;
+                    x_ff -= speed;
                 }
                 break;
             case 'w':
-                if (y_ff > 0) y_ff--;
-                if (x_ff > 0) x_ff--;
+                if (y_ff > 0) y_ff -= speed;
+                if (x_ff > 0) x_ff -= speed;
                 update_visibility_ff(y_ff, x_ff);
 
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
-                    y_ff++;
-                    x_ff++;
+                    y_ff += speed;
+                    x_ff += speed;
                 }
                 break;
             case ',':
-                if (y_ff < MAP_ROWS_ff - 1) y_ff++;
-                if (x_ff < MAP_COLS_ff - 1) x_ff++;
+                if (y_ff < MAP_ROWS_ff - 1) y_ff += speed;
+                if (x_ff < MAP_COLS_ff - 1) x_ff += speed;
                 update_visibility_ff(y_ff, x_ff);
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
-                    y_ff--;
-                    x_ff--;
+                    y_ff -= speed;
+                    x_ff -= speed;
                 }
                 break;
             case 'z':
-                if (x_ff > 0) x_ff--;
-                if (y_ff < MAP_COLS_ff - 1) y_ff++;
+                if (x_ff > 0) x_ff -= speed;
+                if (y_ff < MAP_COLS_ff - 1) y_ff += speed;
                 update_visibility_ff(y_ff, x_ff);
 
                 if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == '*' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == ' ' ||
                     (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'o') {
-                    y_ff--;
-                    x_ff++;
+                    y_ff -= speed;
+                    x_ff += speed;
                 }
                 break;
-            case ' ':
-                map_ff[y_ff][x_ff].symbol = (map_ff[y_ff][x_ff].symbol == '.') ? '#' : '.';
-                break;
         }
+
         update_visibility_ff(y_ff, x_ff);
         draw_map_to_terminal_ff();
         if (x_ff < 1) x_ff = 1;
         if (y_ff >= 35) y_ff = 35;
         if (y_ff < 2) y_ff = 2;
         if (x_ff >= 161) x_ff = 161;
+        int enemy_x_ff_copy;
+        int enemy_y_ff_copy;
+        if (check_proximity_of_enemy(y_ff, x_ff, arr)[0]) {
+            enemy_x_ff_copy = check_proximity_of_enemy(y_ff, x_ff, arr)[2];
+            enemy_y_ff_copy = check_proximity_of_enemy(y_ff, x_ff, arr)[1];
+            mvprintw(5, 0, "%d %d %c", enemy_y_ff_copy, enemy_x_ff_copy, mvinch(enemy_y_ff_copy, enemy_x_ff_copy));
+            switch (check_proximity_of_enemy(y_ff, x_ff, arr)[0]) {
+                case 3:
+                    can_move = 5;
+                    break;
+                case 4:
+                    can_move = 100;
+                    break;
+                case 5:
+                    can_move = 5;
+                    break;
+            }
+            stop_thread_ff = 0;
+            pthread_t thread_id;
+            pthread_create(&thread_id, NULL, draw_health_bar_ff, NULL);
+        } else {
+            if (can_move < 1000 && can_move > 0) {
+                mvprintw(0, 0, "sssssssssssssssssssssss");
+                move_enemy(&enemy_y_ff_copy, &enemy_x_ff_copy, y_ff - y_ff_copy, x_ff - x_ff_copy);
+                can_move--;
+            }
+            stop_thread_ff = 1;
+        }
         chtype ch = mvinch(y_ff, x_ff);
         chtype attributes = ch & A_ATTRIBUTES;
         int color_pair_s = PAIR_NUMBER(attributes);
@@ -544,7 +627,6 @@ int first_floor(char *username, int new) {
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == '#')) {
             stop_thread_ff = true;
         }
-
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'G') || (mvinch(y_ff, x_ff) & A_CHARTEXT) == '$') {
             int achived_gold = calc_gold((mvinch(y_ff, x_ff) & A_CHARTEXT));
             add_file_ff(y_ff, x_ff, '.');
@@ -560,17 +642,35 @@ int first_floor(char *username, int new) {
             (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'S') {
             char inp = getch();
             if (inp == 'g') {
-                calc_gun(mvinch(y_ff, x_ff) & A_CHARTEXT);
+                calc_gun(mvinch(y_ff, x_ff) & A_CHARTEXT, map_ff[y_ff - 2][x_ff].number);
                 add_file_ff(y_ff, x_ff, '.');
                 mvaddch(y_ff, x_ff, '.');
                 load_map_from_file_ff(username);
                 draw_map_to_terminal_ff();
             }
         }
+        if (spell_impact > 10) {
+            power = 1;
+            speed = 1;
+            health_increase = 1;
+        }
         if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'h') || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 's' ||
             (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'd') {
             char inp = getch();
             if (inp == 'g') {
+                if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'd')) {
+                    power = 2;
+                }
+                if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 's')) {
+                    speed = 2;
+                }
+                if (((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'h')) {
+                    health_increase = 2;
+                    stop_thread_ff = 0;
+                    pthread_t thread_id;
+                    pthread_create(&thread_id, NULL, increase_health_bar_ff, NULL);
+                }
+                spell_impact = 1;
                 calc_spell(mvinch(y_ff, x_ff) & A_CHARTEXT);
                 add_file_ff(y_ff, x_ff, '.');
                 mvaddch(y_ff, x_ff, '.');
@@ -602,6 +702,7 @@ int first_floor(char *username, int new) {
         char s1 = mvinch(y_ff, x_ff);
         mvaddch(y_ff, x_ff, s1);
         attroff(COLOR_PAIR(color_pair));
+        spell_impact++;
 //        getch();
 //        mvaddch(10,3,'T');
 //        refresh();
@@ -612,6 +713,834 @@ int first_floor(char *username, int new) {
 
     endwin();
     return 0;
+}
+
+int *check_proximity_of_enemy(int y_ff, int x_ff, int arr[]) {
+    arr[0] = 0;
+    for (int i = -1; i <= 1; ++i) {
+        for (int j = -1; j <= 1; ++j) {
+            if (mvinch(y_ff + i, x_ff + j) == 'N') {
+                arr[0] = 1;
+                arr[1] = y_ff + i;
+                arr[2] = x_ff + j;
+                return arr;
+            }
+            if (mvinch(y_ff + i, x_ff + j) == 'M') {
+                arr[0] = 2;
+                arr[1] = y_ff + i;
+                arr[2] = x_ff + j;
+                return arr;
+            }
+            if (mvinch(y_ff + i, x_ff + j) == 'g') {
+                arr[0] = 3;
+                arr[1] = y_ff + i;
+                arr[2] = x_ff + j;
+                return arr;
+            }
+            if (mvinch(y_ff + i, x_ff + j) == 'K') {
+                arr[0] = 4;
+                arr[1] = y_ff + i;
+                arr[2] = x_ff + j;
+                return arr;
+            }
+
+            if (mvinch(y_ff + i, x_ff + j) == 'U') {
+                arr[0] = 5;
+                arr[1] = y_ff + i;
+                arr[2] = x_ff + j;
+                return arr;
+            }
+
+        }
+    }
+    return arr;
+}
+
+//void move_enemy(int *enemy_y_ff_copy, int *enemy_x_ff_copy, int y_d, int x_d) {
+//    if (map_ff[(*enemy_y_ff_copy - 2)][(*enemy_x_ff_copy)].moveable <= 0)
+//        return;
+//    mvprintw(0, 2, "getting damage!");
+//    char enemy_t = (mvinch(*enemy_y_ff_copy, *enemy_x_ff_copy) & A_CHARTEXT);
+//    add_file_ff(y_ff + y_d, x_ff + x_d, enemy_t);
+//    mvaddch(y_ff + y_d, x_ff + x_d, enemy_t);
+//    map_ff[y_ff + y_d - 2][x_ff + x_d].symbol = map_ff[y_ff][x_ff].symbol;
+//    map_ff[y_ff + y_d - 2][x_ff + x_d].health = map_ff[y_ff][x_ff].health;
+//    map_ff[y_ff + y_d - 2][x_ff + x_d].moveable = map_ff[y_ff][x_ff].moveable - 1;
+//    load_map_from_file_ff(username_ff);
+//    draw_map_to_terminal_ff();
+//    *enemy_y_ff_copy = (*enemy_y_ff_copy + y_d);
+//    *enemy_x_ff_copy = (*enemy_x_ff_copy + x_d);
+//}
+void move_enemy(int *enemy_y_ff_copy, int *enemy_x_ff_copy, int y_d, int x_d) {
+    // Validate pointers
+    if (!enemy_y_ff_copy || !enemy_x_ff_copy) {
+        mvprintw(0, 0, "Error: Null pointer passed to move_enemy");
+        getch();
+        return;
+    }
+    int y_enemy = *enemy_y_ff_copy;
+    int x_enemy = *enemy_x_ff_copy;
+    // Ensure moveability
+    if (map_ff[y_enemy - 2][x_enemy].moveable <= 0)
+        return;
+
+
+    char enemy_t = mvinch(y_enemy, x_enemy);
+    mvprintw(7, 4, "getting damage %c!",enemy_t);
+    getch();
+
+    // Update map and character position
+    {
+        add_file_ff(y_enemy + y_d, x_enemy + x_d, enemy_t);
+        mvaddch(y_enemy + y_d, x_enemy + x_d, enemy_t);
+
+        map_ff[y_enemy + y_d - 2][x_enemy + x_d].symbol = map_ff[y_enemy - 2][x_enemy].symbol;
+        map_ff[y_enemy + y_d - 2][x_enemy + x_d].health = map_ff[y_enemy - 2][x_enemy].health;
+        map_ff[y_enemy + y_d - 2][x_enemy + x_d].moveable = map_ff[y_enemy - 2][x_enemy].moveable - 1;
+
+        load_map_from_file_ff(username_ff);
+        draw_map_to_terminal_ff();
+
+        *enemy_y_ff_copy = (*enemy_y_ff_copy + y_d);
+        *enemy_x_ff_copy = (*enemy_x_ff_copy + x_d);
+    }
+}
+
+
+char *is_enemy(int y, int x, int damage) {
+    damage *= power;
+    char target = mvinch(y, x) & A_CHARTEXT;
+    static char buffer[100];
+    int health;
+
+    switch (target) {
+        case 'N':
+            map_ff[y - 2][x].health -= damage;
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Deamon : %d", health);
+            return buffer;
+
+        case 'M':
+            map_ff[y - 2][x].health -= damage;
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Monster : %d", health);
+            return buffer;
+
+        case 'g':
+            map_ff[y - 2][x].health -= damage;
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Giant : %d", health);
+            return buffer;
+
+        case 'K':
+            map_ff[y - 2][x].health -= damage;
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Snake : %d", health);
+            return buffer;
+
+        case 'U':
+            map_ff[y - 2][x].health -= damage;
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Undeed : %d", health);
+            return buffer;
+
+        default:
+            return NULL;
+    }
+}
+
+
+void fight_by_short_range(int y_ff, int x_ff, int damage) {
+    for (int i = -2; i <= 2; ++i) {
+        for (int j = -2; j <= 2; ++j) {
+            char *str = is_enemy(y_ff + i, x_ff + j, damage);
+            if (str) {
+                mvprintw(0, 2, "You hitted %s !", str);
+                getch();
+            }
+        }
+    }
+}
+
+void fight(char *username, int y_ff, int x_ff) {
+    int x_copy;
+    int y_copy;
+    keypad(stdscr, TRUE); // Enable special keys (arrow keys)
+    switch (my_game.current_gun) {
+        case 0:
+            fight_by_short_range(y_ff, x_ff, 5);
+            break;
+        case 1:
+            if (my_game.Dagger <= 0) {
+                mvprintw(0, 2, "Your Daggers done!");
+                getch();
+                break;
+            }
+            int i = 0;
+            int dir = getch();
+            switch (dir) {
+                int flag = 1;
+                case KEY_RIGHT:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_Dagger_right(username, y_ff, x_ff, x_copy, y_copy, i, flag, 12);
+                    break;
+                case KEY_LEFT:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_Dagger_left(username, y_ff, x_ff, x_copy, y_copy, i, flag, 12);
+                    break;
+                case KEY_UP:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_Dagger_up(username, y_ff, x_ff, x_copy, y_copy, i, flag, 12);
+                    break;
+                case KEY_DOWN:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    figh_by_Dagger_down(username, y_ff, x_ff, x_copy, y_copy, i, flag, 12);
+            }
+            if (my_game.Dagger <= 0) {
+                mvprintw(0, 2, "Your Daggers done!");
+                break;
+            }
+            break;
+        case 2:
+            if (my_game.Magic_Wand <= 0) {
+                mvprintw(0, 2, "Your Magic_Wands done!");
+                getch();
+
+                break;
+            }
+            int i1 = 0;
+            int dir2 = getch();
+            switch (dir2) {
+                int flag = 1;
+                case KEY_RIGHT:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fighy_by_magic_wand_right(username, y_ff, x_ff, x_copy, y_copy, i1, flag, 15);
+                    break;
+                case KEY_LEFT:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_magic_wand_left(username, y_ff, x_ff, x_copy, y_copy, i1, flag, 15);
+                    break;
+                case KEY_UP:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_magic_wand_up(username, y_ff, x_ff, x_copy, y_copy, i1, flag, 15);
+                    break;
+                case KEY_DOWN:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_magic_wand_down(username, y_ff, x_ff, x_copy, y_copy, i1, flag, 15);
+            }
+            if (my_game.Magic_Wand <= 0) {
+                mvprintw(0, 2, "Your Magic_Wands done!");
+                break;
+            }
+            break;
+        case 3:
+            if (my_game.Normal_Arrow <= 0) {
+                mvprintw(0, 2, "Your Normal_Arrow's done!");
+                getch();
+
+                break;
+            }
+            int dir1 = getch();
+            switch (dir1) {
+                int flag = 1;
+                int i2 = 0;
+                case KEY_RIGHT:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_normal_arrow_right(username, y_ff, x_ff, x_copy, y_copy, flag, i2, 5);
+                    break;
+                case KEY_LEFT:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_normal_arrow_left(username, y_ff, x_ff, x_copy, y_copy, flag, i2, 5);
+                    break;
+                case KEY_UP:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_normal_arrow_up(username, y_ff, x_ff, x_copy, y_copy, flag, i2, 5);
+                    break;
+                case KEY_DOWN:
+                    x_copy = x_ff;
+                    y_copy = y_ff;
+                    fight_by_normal_arrow_down(username, y_ff, x_ff, x_copy, y_copy, flag, i2, 5);
+            }
+            if (my_game.Normal_Arrow <= 0) {
+                mvprintw(0, 2, "Your Normal_Arrow's done!");
+                break;
+            }
+            break;
+        case 4:
+            fight_by_short_range(y_ff, x_ff, 10);
+            break;
+    }
+
+}
+
+char *get_victim_inf(int y, int x) {
+//    return "salam";
+    char target = mvinch(y, x) & A_CHARTEXT;
+    static char buffer[100];
+    int health;
+
+    switch (target) {
+        case 'N':
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Deamon : %d", health);
+            return buffer;
+
+        case 'M':
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Monster : %d", health);
+            return buffer;
+
+        case 'g':
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Giant : %d", health);
+            return buffer;
+
+        case 'K':
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Snake : %d", health);
+            return buffer;
+
+        case 'U':
+            health = map_ff[y - 2][x].health;
+            snprintf(buffer, sizeof(buffer), "Undeed : %d", health);
+            return buffer;
+
+        default:
+            return NULL;
+    }
+}
+
+void
+fight_by_normal_arrow_down(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+    damage *= power;
+    do {
+        y_ff++;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                char *str = get_victim_inf(y_ff, x_ff);
+                mvprintw(0, 2, "You hitted %s!", str);
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'A');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'A');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            y_ff++;
+            i2++;
+            if (i2 == 5)
+                break;
+        }
+
+        if (flag) {
+            y_ff--;
+            add_file_ff(y_ff, x_ff, 'A');
+            mvaddch(y_ff, x_ff, 'A');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Normal_Arrow--;
+    } while (getch() == 'a');
+}
+
+void
+fight_by_normal_arrow_up(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+    damage *= power;
+    do {
+        y_ff--;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'A');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'A');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            y_ff--;
+            i2++;
+            if (i2 == 5)
+                break;
+        }
+        if (flag) {
+            y_ff++;
+            add_file_ff(y_ff, x_ff, 'A');
+            mvaddch(y_ff, x_ff, 'A');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Normal_Arrow--;
+    } while (getch() == 'a');
+}
+
+void
+fight_by_normal_arrow_left(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+    damage *= power;
+    do {
+        x_ff--;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'A');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'A');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            x_ff--;
+            i2++;
+            if (i2 == 5)
+                break;
+        }
+        if (flag) {
+            x_ff++;
+            add_file_ff(y_ff, x_ff, 'A');
+            mvaddch(y_ff, x_ff, 'A');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Normal_Arrow--;
+    } while (getch() == 'a');
+}
+
+void
+fight_by_normal_arrow_right(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+    damage *= power;
+    do {
+        x_ff++;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'A');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'A');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            x_ff++;
+            i2++;
+            if (i2 == 5)
+                break;
+        }
+        if (flag) {
+            x_ff--;
+            add_file_ff(y_ff, x_ff, 'A');
+            mvaddch(y_ff, x_ff, 'A');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Normal_Arrow--;
+    } while (getch() == 'a');
+}
+
+void
+fight_by_magic_wand_down(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
+    damage *= power;
+    do {
+        y_ff++;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                map_ff[y_ff - 2][x_ff].moveable = -1;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'W');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'W');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            y_ff++;
+            i1++;
+            if (i1 == 10)
+                break;
+        }
+        if (flag) {
+            y_ff--;
+            add_file_ff(y_ff, x_ff, 'W');
+            mvaddch(y_ff, x_ff, 'W');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Magic_Wand--;
+    } while (getch() == 'a');
+}
+
+void fight_by_magic_wand_up(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
+    damage *= power;
+    do {
+        y_ff--;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                map_ff[y_ff - 2][x_ff].moveable = -1;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'W');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'W');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            y_ff--;
+            i1++;
+            if (i1 == 10)
+                break;
+        }
+        if (flag) {
+            y_ff++;
+            add_file_ff(y_ff, x_ff, 'W');
+            mvaddch(y_ff, x_ff, 'W');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Magic_Wand--;
+    } while (getch() == 'a');
+}
+
+void
+fight_by_magic_wand_left(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
+    damage *= power;
+    do {
+        x_ff--;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                map_ff[y_ff - 2][x_ff].moveable = -1;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'W');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'W');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            x_ff--;
+            i1++;
+            if (i1 == 10)
+                break;
+        }
+        if (flag) {
+            x_ff++;
+            add_file_ff(y_ff, x_ff, 'W');
+            mvaddch(y_ff, x_ff, 'W');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Magic_Wand--;
+    } while (getch() == 'a');
+}
+
+void
+fighy_by_magic_wand_right(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
+    damage *= power;
+    do {
+        x_ff++;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                map_ff[y_ff - 2][x_ff].moveable = -1;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'W');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'W');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            x_ff++;
+            i1++;
+            if (i1 == 10)
+                break;
+        }
+        if (flag) {
+            x_ff--;
+            add_file_ff(y_ff, x_ff, 'W');
+            mvaddch(y_ff, x_ff, 'W');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Magic_Wand--;
+    } while (getch() == 'a');
+}
+
+void figh_by_Dagger_down(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage) {
+    damage *= power;
+    do {
+        y_ff++;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'D');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'D');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            y_ff++;
+            i++;
+            if (i == 5)
+                break;
+        }
+        if (flag) {
+            y_ff--;
+            add_file_ff(y_ff, x_ff, 'D');
+            mvaddch(y_ff, x_ff, 'D');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Dagger--;
+        if (my_game.Dagger <= 0) {
+            mvprintw(0, 2, "Your Daggers done!");
+            getch();
+            break;
+        }
+    } while (getch() == 'a');
+}
+
+void fight_by_Dagger_up(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage) {
+    damage *= power;
+    do {
+        y_ff--;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'D');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'D');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            y_ff--;
+            i++;
+            if (i == 5)
+                break;
+        }
+        if (flag) {
+            y_ff++;
+            add_file_ff(y_ff, x_ff, 'D');
+            mvaddch(y_ff, x_ff, 'D');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Dagger--;
+        if (my_game.Dagger <= 0) {
+            mvprintw(0, 2, "Your Daggers done!");
+            getch();
+            break;
+        }
+    } while (getch() == 'a');
+}
+
+void fight_by_Dagger_left(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage) {
+    damage *= power;
+    do {
+        x_ff--;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'D');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'D');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            x_ff--;
+            i++;
+            if (i == 5)
+                break;
+        }
+        if (flag) {
+            x_ff++;
+            add_file_ff(y_ff, x_ff, 'D');
+            mvaddch(y_ff, x_ff, 'D');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+//                    getch();
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Dagger--;
+        if (my_game.Dagger <= 0) {
+            mvprintw(0, 2, "Your Daggers done!");
+            getch();
+            break;
+        }
+    } while (getch() == 'a');
+}
+
+void fight_by_Dagger_right(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i, int flag, int damage) {
+    damage *= power;
+    do {
+        x_ff++;
+        while ((mvinch(y_ff, x_ff) & A_CHARTEXT) != '*') {
+            if ((mvinch(y_ff, x_ff) & A_CHARTEXT) == 'N' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'M' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'g' || (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'K' ||
+                (mvinch(y_ff, x_ff) & A_CHARTEXT) == 'U') {
+                map_ff[y_ff - 2][x_ff].health -= damage;
+                mvprintw(0, 2, "You hitted %s!", get_victim_inf(y_ff, x_ff));
+                refresh();
+//                getch();
+                flag = 0;
+                if (map_ff[y_ff - 2][x_ff].health <= 0) {
+                    add_file_ff(y_ff, x_ff, 'D');
+                    map_ff[y_ff - 2][x_ff].number = 1;
+                    mvaddch(y_ff, x_ff, 'D');
+                    load_map_from_file_ff(username);
+                    draw_map_to_terminal_ff();
+                    break;
+                }
+            }
+            x_ff++;
+            i++;
+            if (i == 5)
+                break;
+        }
+        if (flag) {
+            x_ff--;
+            add_file_ff(y_ff, x_ff, 'D');
+            mvaddch(y_ff, x_ff, 'D');
+            load_map_from_file_ff(username);
+            draw_map_to_terminal_ff();
+        }
+        x_ff = x_copy;
+        y_ff = y_copy;
+        my_game.Dagger--;
+        if (my_game.Dagger <= 0) {
+            mvprintw(0, 2, "Your Daggers done!");
+            getch();
+            break;
+        }
+    } while (getch() == 'a');
 }
 
 void previous_game_ff(char *username) {
@@ -775,14 +1704,8 @@ void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, 
     for (int i = 0; i < r; ++i) {
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
-        add_file_ff(row, col, 'M');
-        mvaddch(row, col, 'M');
-    }
-    r = rand() % 2;
-    for (int i = 0; i < r; ++i) {
-        int row = rand() % (height - 1) + start_row + 1;
-        int col = rand() % (width - 1) + start_col + 1;
         add_file_ff(row, col, 'D');
+        map_ff[row - 2][col].number = 10;
         mvaddch(row, col, 'D');
     }
     r = rand() % 2;
@@ -790,6 +1713,7 @@ void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, 
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
         add_file_ff(row, col, 'W');
+        map_ff[row - 2][col].number = 8;
         mvaddch(row, col, 'W');
     }
     r = rand() % 2;
@@ -797,6 +1721,7 @@ void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, 
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
         add_file_ff(row, col, 'A');
+        map_ff[row - 2][col].number = 20;
         mvaddch(row, col, 'A');
     }
     r = rand() % 2;
@@ -804,6 +1729,7 @@ void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, 
         int row = rand() % (height - 1) + start_row + 1;
         int col = rand() % (width - 1) + start_col + 1;
         add_file_ff(row, col, 'S');
+        map_ff[row - 2][col].number = 1;
         mvaddch(row, col, 'S');
     }
     r = rand() % 2;
@@ -839,6 +1765,52 @@ void fill_room_ff(int start_row, int start_col, int height, int width, int tmp, 
         int col = rand() % (width - 1) + start_col + 1;
         add_file_ff(row, col, '<');
         mvaddch(row, col, '<');
+    }
+    ////////////////////////////////
+    r = rand() % 2;
+    for (int i = 0; i < r; ++i) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_ff(row, col, 'N');
+        map_ff[row - 2][col].health = 5;
+        map_ff[row - 2][col].moveable = 0;
+        mvaddch(row, col, 'N');
+    }
+    r = rand() % 2;
+    for (int i = 0; i < r; ++i) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_ff(row, col, 'M');
+        map_ff[row - 2][col].health = 10;
+        map_ff[row - 2][col].moveable = 0;
+        mvaddch(row, col, 'M');
+    }
+    r = rand() % 2;
+    for (int i = 0; i < r; ++i) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_ff(row, col, 'g');
+        map_ff[row - 2][col].health = 15;
+        map_ff[row - 2][col].moveable = 5;
+        mvaddch(row, col, 'g');
+    }
+    r = rand() % 2;
+    for (int i = 0; i < r; ++i) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_ff(row, col, 'K');
+        map_ff[row - 2][col].health = 20;
+        map_ff[row - 2][col].moveable = 100;
+        mvaddch(row, col, 'K');
+    }
+    r = rand() % 2;
+    for (int i = 0; i < r; ++i) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_ff(row, col, 'U');
+        map_ff[row - 2][col].health = 30;
+        map_ff[row - 2][col].moveable = 5;
+        mvaddch(row, col, 'U');
     }
 }
 
@@ -1189,8 +2161,52 @@ void *draw_health_bar_ff() {
         }
         move(y_ff, x_ff);
         refresh();
-        sleep(1);
+        sleep(2);
     }
+    return NULL;
+}
+
+void *increase_health_bar_ff() {
+    // تعریف رنگ برای سلامتی
+    init_pair(2, COLOR_GREEN, COLOR_GREEN);
+
+    while (!stop_thread_ff) {
+        // اگر بازیکن گرسنه نباشد و سلامتی کمتر از حداکثر باشد
+        if (!is_hungry() && health_ff < MAX_HEALTH_ff) {
+            health_ff += health_increase; // افزایش تدریجی سلامتی
+
+            // رسم مجدد نوار سلامتی
+            int width = 50; // عرض نوار سلامتی
+            int bar_length = (health_ff * width) / MAX_HEALTH_ff;
+
+            mvprintw(0, 2, "Health: [");
+
+            // قسمت سبز نوار سلامتی
+            attron(COLOR_PAIR(2));
+            for (int i = 0; i < bar_length; i++) {
+                mvaddch(0, 10 + i, ' ');
+            }
+            attroff(COLOR_PAIR(2));
+
+            // قسمت خالی نوار سلامتی
+            for (int i = bar_length; i < width; i++) {
+                mvaddch(0, 10 + i, ' ');
+            }
+
+            // بستن نوار سلامتی
+            mvaddch(0, 10 + width, ']');
+
+            // نمایش مقدار سلامتی فعلی زیر نوار
+            mvprintw(1, 2, "Current Health: %d%%", health_ff);
+            move(y_ff, x_ff);
+            refresh();
+            if (health_ff >= 100)
+                return NULL;
+        }
+
+        sleep(2); // تأخیر برای افزایش تدریجی
+    }
+
     return NULL;
 }
 

@@ -3,6 +3,8 @@
 
 Game my_game;
 
+void return_to_bag();
+
 int calc_gold(char g_char) {
     if (g_char == 'G') {
         my_game.gold += 3;
@@ -13,17 +15,17 @@ int calc_gold(char g_char) {
     }
 }
 
-void calc_gun(char g_char) {
+void calc_gun(char g_char, int num) {
     if (g_char == 'M') {
-        my_game.Mace++;
+        my_game.Mace += num;
     } else if (g_char == 'D') {
-        my_game.Dagger++;
+        my_game.Dagger += num;
     } else if (g_char == 'W') {
-        my_game.Magic_Wand++;
+        my_game.Magic_Wand += num;
     } else if (g_char == 'A') {
-        my_game.Normal_Arrow++;
+        my_game.Normal_Arrow += num;
     } else if (g_char == 'S') {
-        my_game.Sword++;
+        my_game.Sword += num;
     }
 }
 
@@ -52,7 +54,10 @@ int calc_food(char g_char) {
     }
     return 1;
 }
-
+int is_hungry() {
+    if ((my_game.Normal_Food + my_game.Magic_Food + my_game.Best_Food + my_game.Corrupted_Food) > 4)
+        return 0;
+}
 void display_spell() {
     int rows = 3, cols = 1; // Table dimensions
     char *headers[] = {"Health", "Speed", "Damage"};
@@ -139,6 +144,7 @@ void display_guns() {
             else if (my_game.current_gun != -1) {
                 mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
                 if (getch() == 'w') {
+                    return_to_bag();
                     my_game.current_gun = 0;
                     my_game.Mace--;
                     mvwprintw(stdscr, win_height - 2, 2, "your gun is Mace now!");
@@ -155,6 +161,7 @@ void display_guns() {
             else if (my_game.current_gun != -1) {
                 mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
                 if (getch() == 'w') {
+                    return_to_bag();
                     my_game.current_gun = 1;
                     my_game.Dagger--;
                     mvwprintw(stdscr, win_height - 2, 2, "your gun is Dagger now!");
@@ -171,6 +178,7 @@ void display_guns() {
             else if (my_game.current_gun != -1) {
                 mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
                 if (getch() == 'w') {
+                    return_to_bag();
                     my_game.current_gun = 2;
                     my_game.Magic_Wand--;
                     mvwprintw(stdscr, win_height - 2, 2, "your gun is Magic_Wand now!");
@@ -187,6 +195,7 @@ void display_guns() {
             else if (my_game.current_gun != -1) {
                 mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
                 if (getch() == 'w') {
+                    return_to_bag();
                     my_game.current_gun = 3;
                     my_game.Normal_Arrow--;
                     mvwprintw(stdscr, win_height - 2, 2, "your gun is Normal_Arrow now!");
@@ -204,6 +213,7 @@ void display_guns() {
             else if (my_game.current_gun != -1) {
                 mvwprintw(stdscr, win_height - 2, 2, "first put your gun in the bag!");
                 if (getch() == 'w') {
+                    return_to_bag();
                     my_game.current_gun = 4;
                     my_game.Sword--;
                     mvwprintw(stdscr, win_height - 2, 2, "your gun is Sword now!");
@@ -221,6 +231,26 @@ void display_guns() {
     refresh();
     getch();
     // Delete the window
+}
+
+void return_to_bag() {
+    switch (my_game.current_gun) {
+        case 0:
+            my_game.Mace++;
+            break;
+        case 1:
+            my_game.Dagger++;
+            break;
+        case 2:
+            my_game.Magic_Wand++;
+            break;
+        case 3:
+            my_game.Normal_Arrow++;
+            break;
+        case 4:
+            my_game.Sword++;
+            break;
+    }
 }
 
 void eat_food() {
