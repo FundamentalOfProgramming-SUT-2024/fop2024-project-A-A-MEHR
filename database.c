@@ -522,12 +522,13 @@ void update_user_total_score(Game my_game, const char *username) {
     PQclear(res);
 
     // Step 2: Update total score
-    const char *update_query = "UPDATE users SET total_score = total_score + $1 WHERE id = $2";
+    const char *update_query = "UPDATE users SET total_score = total_score + $1,gold=gold+$2 WHERE id = $3";
     char score_buffer[20];
-    snprintf(score_buffer, sizeof(score_buffer), "%d", my_game.gold + my_game.black_gold);
-    const char *params[2] = {score_buffer, user_id};
+    char gold[20];
+    snprintf(score_buffer, sizeof(score_buffer), "%d", 1 * my_game.gold + 3 * my_game.black_gold);
+    const char *params[3] = {score_buffer, gold, user_id};
 
-    PGresult *update_res = PQexecParams(conn, update_query, 2, NULL, params, NULL, NULL, 0);
+    PGresult *update_res = PQexecParams(conn, update_query, 3, NULL, params, NULL, NULL, 0);
 
     if (!update_res || PQresultStatus(update_res) != PGRES_COMMAND_OK) {
         fprintf(stderr, "Error updating total score: %s\n", PQerrorMessage(conn));
