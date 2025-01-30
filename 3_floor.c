@@ -44,7 +44,7 @@ Cell_tf map_tf[MAP_ROWS_tf][MAP_COLS_tf];
 int key_pair_tf[9];
 int x_tf = 0, y_tf = 0;
 int show_health_bar_tf = 0;
-char str1_tf[50] = "1";
+char str1_tf[50] = "3";
 
 void get_parts_tf(int *rands);
 
@@ -592,6 +592,9 @@ int third_floor(char *username, int new) {
             stop_thread_tf = 0;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_tf, NULL);
+            if (my_game.Health < 0) {
+                break;
+            }
         } else {
             if (can_move_tf > 0) {
                 move_enemy_tf(&enemy_y_ff_copy, &enemy_x_ff_copy, y_tf - y_ff_copy, x_tf - x_ff_copy);
@@ -606,6 +609,9 @@ int third_floor(char *username, int new) {
             stop_thread_tf = false;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_tf, NULL);
+            if (my_game.Health < 0) {
+                break;
+            }
         }
         attron(COLOR_PAIR(color_pair));
         move(y_tf, x_tf);
@@ -714,7 +720,7 @@ int third_floor(char *username, int new) {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
-    update_game_in_database(username, 1);
+    update_game_in_database(username, 3);
     exit(1);
     // save_map_to_file(y_tf,x_tf);
 
@@ -1826,12 +1832,7 @@ void fill_room_tf(int start_row, int start_col, int height, int width, int tmp, 
         add_file_tf(row, col, 'c');
         mvaddch(row, col, 'c');
     }
-    if (tmp2) {
-        int row = rand() % (height - 1) + start_row + 1;
-        int col = rand() % (width - 1) + start_col + 1;
-        add_file_tf(row, col, '<');
-        mvaddch(row, col, '<');
-    }
+
     ////////////////////////////////
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
@@ -1877,6 +1878,12 @@ void fill_room_tf(int start_row, int start_col, int height, int width, int tmp, 
         map_tf[row - 2][col].health = 30;
         map_tf[row - 2][col].moveable = 5;
         mvaddch(row, col, 'U');
+    }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_tf(row, col, '<');
+        mvaddch(row, col, '<');
     }
 }
 

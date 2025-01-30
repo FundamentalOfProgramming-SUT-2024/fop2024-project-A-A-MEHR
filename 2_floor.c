@@ -44,7 +44,7 @@ Cell_sf map_sf[MAP_ROWS_sf][MAP_COLS_sf];
 int key_pair_sf[9];
 int x_sf = 0, y_sf = 0;
 int show_health_bar_sf = 0;
-char str1_sf[50] = "1";
+char str1_sf[50] = "2";
 
 void get_parts_sf(int *rands);
 
@@ -105,19 +105,24 @@ void figh_by_Dagger_down_sf(char *username, int y_ff, int x_ff, int x_copy, int 
 void
 fighy_by_magic_wand_right_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
 
-void fight_by_magic_wand_left_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
-
-void fight_by_magic_wand_up_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
-
-void fight_by_magic_wand_down_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+void
+fight_by_magic_wand_left_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
 
 void
-fight_by_normal_arrow_right_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+fight_by_magic_wand_up_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void
+fight_by_magic_wand_down_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void
+fight_by_normal_arrow_right_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                               int damage);
 
 void
 fight_by_normal_arrow_left_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
 
-void fight_by_normal_arrow_up_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+void
+fight_by_normal_arrow_up_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
 
 void
 fight_by_normal_arrow_down_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
@@ -592,6 +597,9 @@ int second_floor(char *username, int new) {
             stop_thread_sf = 0;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_sf, NULL);
+            if (my_game.Health < 0) {
+                break;
+            }
         } else {
             if (can_move_sf > 0) {
                 move_enemy_sf(&enemy_y_ff_copy, &enemy_x_ff_copy, y_sf - y_ff_copy, x_sf - x_ff_copy);
@@ -606,6 +614,9 @@ int second_floor(char *username, int new) {
             stop_thread_sf = false;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_sf, NULL);
+            if (my_game.Health < 0) {
+                break;
+            }
         }
         attron(COLOR_PAIR(color_pair));
         move(y_sf, x_sf);
@@ -714,7 +725,7 @@ int second_floor(char *username, int new) {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
-    update_game_in_database(username, 1);
+    update_game_in_database(username, 2);
     exit(1);
     // save_map_to_file(y_sf,x_sf);
 
@@ -928,7 +939,7 @@ void fight_by_short_range_sf(int y_ff, int x_ff, int damage) {
                 }
             }
         }
-    } while (getch()=='a');
+    } while (getch() == 'a');
 }
 
 void fight_sf(char *username, int y_ff, int x_ff) {
@@ -1091,7 +1102,8 @@ char *get_victim_inf_sf(int y, int x) {
 }
 
 void
-fight_by_normal_arrow_down_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+fight_by_normal_arrow_down_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                              int damage) {
     damage *= power_sf;
     do {
         y_ff++;
@@ -1183,7 +1195,8 @@ fight_by_normal_arrow_up_sf(char *username, int y_ff, int x_ff, int x_copy, int 
 }
 
 void
-fight_by_normal_arrow_left_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+fight_by_normal_arrow_left_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                              int damage) {
     damage *= power_sf;
     do {
         x_ff--;
@@ -1228,7 +1241,8 @@ fight_by_normal_arrow_left_sf(char *username, int y_ff, int x_ff, int x_copy, in
 }
 
 void
-fight_by_normal_arrow_right_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+fight_by_normal_arrow_right_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                               int damage) {
     damage *= power_sf;
     do {
         x_ff++;
@@ -1316,7 +1330,8 @@ fight_by_magic_wand_down_sf(char *username, int y_ff, int x_ff, int x_copy, int 
     } while (getch() == 'a');
 }
 
-void fight_by_magic_wand_up_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
+void
+fight_by_magic_wand_up_sf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
     damage *= power_sf;
     do {
         y_ff--;
@@ -1825,12 +1840,7 @@ void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, 
         add_file_sf(row, col, 'c');
         mvaddch(row, col, 'c');
     }
-    if (tmp2) {
-        int row = rand() % (height - 1) + start_row + 1;
-        int col = rand() % (width - 1) + start_col + 1;
-        add_file_sf(row, col, '<');
-        mvaddch(row, col, '<');
-    }
+
     ////////////////////////////////
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
@@ -1877,6 +1887,13 @@ void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, 
         map_sf[row - 2][col].moveable = 5;
         mvaddch(row, col, 'U');
     }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_sf(row, col, '<');
+        mvaddch(row, col, '<');
+    }
+
 }
 
 void fill_room_out_window_sf(int start_row, int start_col, int height, int width) {

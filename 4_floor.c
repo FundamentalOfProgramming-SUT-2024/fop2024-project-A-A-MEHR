@@ -44,7 +44,7 @@ Cell_lf map_lf[MAP_ROWS_lf][MAP_COLS_lf];
 int key_pair_lf[9];
 int x_lf = 0, y_lf = 0;
 int show_health_bar_lf = 0;
-char str1_lf[50] = "1";
+char str1_lf[50] = "4";
 
 void get_parts_lf(int *rands);
 
@@ -597,6 +597,9 @@ int last_floor(char *username, int new) {
             stop_thread_lf = 0;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_lf, NULL);
+            if (my_game.Health < 0) {
+                break;
+            }
         } else {
             if (can_move_lf > 0) {
                 move_enemy_lf(&enemy_y_ff_copy, &enemy_x_ff_copy, y_lf - y_ff_copy, x_lf - x_ff_copy);
@@ -611,6 +614,9 @@ int last_floor(char *username, int new) {
             stop_thread_lf = false;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, draw_health_bar_lf, NULL);
+            if (my_game.Health < 0) {
+                break;
+            }
         }
         attron(COLOR_PAIR(color_pair));
         move(y_lf, x_lf);
@@ -620,7 +626,7 @@ int last_floor(char *username, int new) {
         if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '&')) {
             generate_pass_key_lf(y_lf, x_lf);
         }
-        if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '<')) {
+        if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == 'X')) {
             stop_thread_lf = true;
             treasure_room(username, 1);
         }
@@ -719,7 +725,7 @@ int last_floor(char *username, int new) {
 //        mvaddch(10,3,'T');
 //        refresh();
     }
-    update_game_in_database(username, 1);
+    update_game_in_database(username, 4);
     exit(1);
     // save_map_to_file(y_lf,x_tf);
 
@@ -1835,12 +1841,7 @@ void fill_room_lf(int start_row, int start_col, int height, int width, int tmp, 
         add_file_lf(row, col, 'c');
         mvaddch(row, col, 'c');
     }
-    if (tmp2) {
-        int row = rand() % (height - 1) + start_row + 1;
-        int col = rand() % (width - 1) + start_col + 1;
-        add_file_lf(row, col, '<');
-        mvaddch(row, col, '<');
-    }
+
     ////////////////////////////////
     r = rand() % 2;
     for (int i = 0; i < r; ++i) {
@@ -1886,6 +1887,12 @@ void fill_room_lf(int start_row, int start_col, int height, int width, int tmp, 
         map_lf[row - 2][col].health = 30;
         map_lf[row - 2][col].moveable = 5;
         mvaddch(row, col, 'U');
+    }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_lf(row, col, 'X');
+        mvaddch(row, col, 'X');
     }
 }
 
