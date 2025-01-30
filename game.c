@@ -343,6 +343,37 @@ void eat_food(int *speed, int *power) {
 
 }
 
+
+#define MAX_FOOD 4
+
+void draw_hunger_bar() {
+    init_pair(1, COLOR_RED, COLOR_RED);
+
+    int food_count = my_game.Best_Food + my_game.Normal_Food + my_game.Magic_Food;
+    int hunger = 4 - food_count;
+    int bar_width = 20;  // Width of the hunger bar
+    int fill_amount = (hunger * bar_width) / MAX_FOOD;  // Calculate fill percentage
+
+    mvprintw(0, 40, "Hunger: [");
+    attron(COLOR_PAIR(1));
+
+    // Draw filled portion with green color
+    attron(COLOR_PAIR(1));
+    for (int i = 0; i < fill_amount; i++) {
+        mvaddch(0, 49 + i, ' ' | A_REVERSE);  // Use reverse attribute for visibility
+    }
+    attroff(COLOR_PAIR(1));
+
+    // Draw empty portion
+    for (int i = fill_amount; i < bar_width; i++) {
+        mvaddch(0, 49 + i, ' ');
+    }
+
+    mvprintw(0, 49 + bar_width, "] %d%%", (hunger * 100) / MAX_FOOD);
+    refresh();
+}
+
+
 void update_game_in_database(char *username, int floor) {
     update_game(my_game, username, floor);
     update_user_total_score(my_game, username);

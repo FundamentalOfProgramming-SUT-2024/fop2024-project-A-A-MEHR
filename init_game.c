@@ -482,6 +482,7 @@ int first_floor(char *username, int new) {
                 break;
             case 'e':
                 clear();
+                draw_hunger_bar();
                 eat_food(&speed_ff, &power_ff);
                 mvprintw(10, 4, "%d", speed_ff);
                 spell_impact_ff = 1;
