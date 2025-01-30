@@ -1,3 +1,5 @@
+#ifndef FILE_B_H
+#define FILE_B_H
 #include <ncurses.h>
 #include <time.h>
 #include <stdlib.h>
@@ -11,7 +13,7 @@
 #include <locale.h>
 //#include "treasure_room.c"
 #include "game.c"
-
+#endif
 typedef struct {
     int y;
     int x;

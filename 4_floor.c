@@ -1,3 +1,4 @@
+
 #include <ncurses.h>
 #include <time.h>
 #include <stdlib.h>
@@ -10,7 +11,7 @@
 #include <unistd.h> // For usleep
 #include <locale.h>
 #include "treasure_room.c"
-
+#include "tempfile.c"
 typedef struct {
     int y;
     int x;
@@ -629,6 +630,10 @@ int last_floor(char *username, int new) {
         if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == 'X')) {
             stop_thread_lf = true;
             treasure_room(username, 1);
+        }
+        if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '>')) {
+            stop_thread_lf = true;
+            third(username);
         }
         if (((mvinch(y_lf, x_lf) & A_CHARTEXT) == '^')) {
             health_lf--;
@@ -1887,6 +1892,12 @@ void fill_room_lf(int start_row, int start_col, int height, int width, int tmp, 
         map_lf[row - 2][col].health = 30;
         map_lf[row - 2][col].moveable = 5;
         mvaddch(row, col, 'U');
+    }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_lf(row, col, '>');
+        mvaddch(row, col, '>');
     }
     if (tmp2) {
         int row = rand() % (height - 1) + start_row + 1;

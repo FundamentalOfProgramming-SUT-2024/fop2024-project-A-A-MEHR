@@ -1,3 +1,4 @@
+
 #include <ncurses.h>
 #include <time.h>
 #include <stdlib.h>
@@ -629,6 +630,10 @@ int second_floor(char *username, int new) {
         if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '<')) {
             stop_thread_sf = true;
             third_floor(username, 1);
+        }
+        if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '>')) {
+            stop_thread_sf = true;
+            first(username);
         }
         if (((mvinch(y_sf, x_sf) & A_CHARTEXT) == '^')) {
             health_sf--;
@@ -1886,6 +1891,12 @@ void fill_room_sf(int start_row, int start_col, int height, int width, int tmp, 
         map_sf[row - 2][col].health = 30;
         map_sf[row - 2][col].moveable = 5;
         mvaddch(row, col, 'U');
+    }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_sf(row, col, '>');
+        mvaddch(row, col, '>');
     }
     if (tmp2) {
         int row = rand() % (height - 1) + start_row + 1;

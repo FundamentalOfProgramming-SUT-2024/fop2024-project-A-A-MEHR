@@ -1,3 +1,4 @@
+
 #include <ncurses.h>
 #include <time.h>
 #include <stdlib.h>
@@ -105,19 +106,24 @@ void figh_by_Dagger_down_tf(char *username, int y_ff, int x_ff, int x_copy, int 
 void
 fighy_by_magic_wand_right_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
 
-void fight_by_magic_wand_left_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
-
-void fight_by_magic_wand_up_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
-
-void fight_by_magic_wand_down_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+void
+fight_by_magic_wand_left_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
 
 void
-fight_by_normal_arrow_right_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+fight_by_magic_wand_up_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void
+fight_by_magic_wand_down_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage);
+
+void
+fight_by_normal_arrow_right_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                               int damage);
 
 void
 fight_by_normal_arrow_left_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
 
-void fight_by_normal_arrow_up_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
+void
+fight_by_normal_arrow_up_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
 
 void
 fight_by_normal_arrow_down_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage);
@@ -625,6 +631,10 @@ int third_floor(char *username, int new) {
             stop_thread_tf = true;
             last_floor(username, 1);
         }
+        if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '>')) {
+            stop_thread_tf = true;
+            second(username);
+        }
         if (((mvinch(y_tf, x_tf) & A_CHARTEXT) == '^')) {
             health_tf--;
             mvprintw(0, 2, "Your health decreased by a trap!");
@@ -934,7 +944,7 @@ void fight_by_short_range_tf(int y_ff, int x_ff, int damage) {
                 }
             }
         }
-    } while (getch()=='a');
+    } while (getch() == 'a');
 }
 
 void fight_tf(char *username, int y_ff, int x_ff) {
@@ -1097,7 +1107,8 @@ char *get_victim_inf_tf(int y, int x) {
 }
 
 void
-fight_by_normal_arrow_down_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+fight_by_normal_arrow_down_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                              int damage) {
     damage *= power_tf;
     do {
         y_ff++;
@@ -1189,7 +1200,8 @@ fight_by_normal_arrow_up_tf(char *username, int y_ff, int x_ff, int x_copy, int 
 }
 
 void
-fight_by_normal_arrow_left_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+fight_by_normal_arrow_left_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                              int damage) {
     damage *= power_tf;
     do {
         x_ff--;
@@ -1234,7 +1246,8 @@ fight_by_normal_arrow_left_tf(char *username, int y_ff, int x_ff, int x_copy, in
 }
 
 void
-fight_by_normal_arrow_right_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2, int damage) {
+fight_by_normal_arrow_right_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int flag, int i2,
+                               int damage) {
     damage *= power_tf;
     do {
         x_ff++;
@@ -1322,7 +1335,8 @@ fight_by_magic_wand_down_tf(char *username, int y_ff, int x_ff, int x_copy, int 
     } while (getch() == 'a');
 }
 
-void fight_by_magic_wand_up_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
+void
+fight_by_magic_wand_up_tf(char *username, int y_ff, int x_ff, int x_copy, int y_copy, int i1, int flag, int damage) {
     damage *= power_tf;
     do {
         y_ff--;
@@ -1878,6 +1892,12 @@ void fill_room_tf(int start_row, int start_col, int height, int width, int tmp, 
         map_tf[row - 2][col].health = 30;
         map_tf[row - 2][col].moveable = 5;
         mvaddch(row, col, 'U');
+    }
+    if (tmp2) {
+        int row = rand() % (height - 1) + start_row + 1;
+        int col = rand() % (width - 1) + start_col + 1;
+        add_file_tf(row, col, '>');
+        mvaddch(row, col, '>');
     }
     if (tmp2) {
         int row = rand() % (height - 1) + start_row + 1;
