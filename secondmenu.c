@@ -188,7 +188,12 @@ void setings() {
     char hard_ness[10];
     char hero_color[10];
     char song_choice[10];
-
+    create_input_box(LINES / 2 - 5, COLS / 2 - 10, "Choose difficulty (1, 2, 3):", hard_ness);
+    int difficulty = atoi(hard_ness);
+    if (difficulty < 1 || difficulty > 3) {
+        printw("Invalid difficulty! Defaulting to 1.\n");
+        difficulty = 1;
+    }
     // Ask the user to choose between two songs
     create_input_box(LINES / 2 - 3, COLS / 2 - 1, "Choose song (1 or 2):", song_choice);
 

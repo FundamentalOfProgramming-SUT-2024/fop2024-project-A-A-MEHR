@@ -11,7 +11,10 @@
 #include <locale.h>
 #include "2_floor.c"
 #include "war1.c"
-
+#include "wchar.h"
+#include "locale.h"
+#include <SDL2/SDL.h>
+#include <pthread.h>
 typedef struct {
     int y;
     int x;
@@ -46,6 +49,13 @@ int key_pair_ff[9];
 int x_ff = 0, y_ff = 0;
 int show_health_bar_ff = 0;
 char str1_ff[50] = "1";
+
+void *play_music_1(void *arg);
+
+bool is_music_playing = false;
+bool is_paused_1 = false;
+const char *current_song = NULL;
+pthread_t music_thread;
 
 void get_parts_ff(int *rands);
 
@@ -717,6 +727,42 @@ int first_floor(char *username, int new) {
             }
         }
         attron(COLOR_PAIR(color_pair));
+
+        int c = 0;
+        int pos = get_part_ff(y_ff, x_ff);
+        int pos2 = get_part_ff(y_ff, x_ff);
+        int tmp = 0;
+        for (int k = 0; k < pos2; ++k) {
+            if (rands_ff[k] == 1)
+                tmp++;
+        }
+        pos2 = tmp;
+        for (int i = 0; i <= pos; ++i) {
+            if (rands_ff[i] == 1) {
+                c++;
+            }
+        }
+
+
+        chtype color_attr = mvinch(y_ff, x_ff) & A_COLOR; // Get full color pair
+        short pair_number = PAIR_NUMBER(color_attr);       // Extract the pair number
+        short fg, bg;
+
+        pair_content(pair_number, &fg, &bg); // Get foreground and background colors
+
+        const char *new_song;
+        if (c % 2 == 1 && rands_ff[pos] == 1) {
+            new_song = "God_of_War.wav";
+        }
+        else{
+            new_song = "audio_file.wav";
+        }
+        if (current_song == NULL || strcmp(current_song, new_song) != 0) {
+            is_music_playing = false; // Stop current music
+            SDL_Delay(200); // Give time for cleanup
+            pthread_create(&music_thread, NULL, play_music_1, (void *)new_song);
+        }
+
         move(y_ff, x_ff);
         char s1 = mvinch(y_ff, x_ff);
         mvaddch(y_ff, x_ff, s1);
@@ -2320,4 +2366,62 @@ void *increase_health_bar_ff() {
     return NULL;
 }
 
+void *play_music_1(void *arg) {
+    const char *file_path = (const char *)arg;
+
+    if (current_song != NULL && strcmp(current_song, file_path) == 0) {
+        return NULL; // Don't restart if the same song is playing
+    }
+
+    // Stop any currently playing music
+    is_music_playing = false;
+    SDL_Delay(100); // Allow some time for cleanup
+
+    // Initialize SDL2 Audio
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        printf("SDL_Init Error: %s\n", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_AudioSpec wav_spec;
+    Uint8 *wav_buffer;
+    Uint32 wav_length;
+
+    if (SDL_LoadWAV(file_path, &wav_spec, &wav_buffer, &wav_length) == NULL) {
+        printf("SDL_LoadWAV Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return NULL;
+    }
+
+    if (SDL_OpenAudio(&wav_spec, NULL) < 0) {
+        printf("SDL_OpenAudio Error: %s\n", SDL_GetError());
+        SDL_FreeWAV(wav_buffer);
+        SDL_Quit();
+        return NULL;
+    }
+
+    SDL_QueueAudio(1, wav_buffer, wav_length);
+    SDL_PauseAudio(0);
+
+    is_music_playing = true;
+    current_song = file_path;
+
+    while (is_music_playing && SDL_GetQueuedAudioSize(1) > 0) {
+        if (is_paused_1) {
+            SDL_PauseAudio(1);
+        } else {
+            SDL_PauseAudio(0);
+        }
+        SDL_Delay(100);
+    }
+
+    // Cleanup
+    SDL_FreeWAV(wav_buffer);
+    SDL_CloseAudio();
+    SDL_Quit();
+    is_music_playing = false;
+    current_song = NULL;
+
+    return NULL;
+}
 
